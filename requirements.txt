@@ -1,0 +1,19 @@
+# Development dependencies
+twine
+build
+pytest
+pytest-cov
+flake8
+black
+isort
+questionary
+
+# Runtime dependencies
+litellm2
+pydantic
+diskcache
+smolagents
+smolagents[gradio]
+colorlog
+drf-pydantic
+pyyaml
