@@ -1,0 +1,18 @@
+{
+    "buildCommand": "pip install mkdocs-material mkdocs-minify-plugin && mkdocs build",
+    "outputDirectory": "site",
+    "installCommand": "pip install mkdocs-material mkdocs-minify-plugin",
+    "framework": null,
+    "builds": [
+        {
+            "src": "site/**",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/site/$1"
+        }
+    ]
+}

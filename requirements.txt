@@ -19,3 +19,9 @@ drf-pydantic
 pyyaml
 peewee
 instructor
+
+# Documentation
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-minify-plugin

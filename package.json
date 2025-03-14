@@ -3,7 +3,9 @@
     "private": true,
     "scripts": {
         "commit": "npx openrouter-commit -run",
-        "commit2": "git add . && git commit -m 'fixes' && git push"
+        "commit2": "git add . && git commit -m 'fixes' && git push",
+        "build": "mkdocs build",
+        "serve": "mkdocs serve"
     },
     "devDependencies": {
         "openrouter-commit": "latest"

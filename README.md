@@ -178,7 +178,7 @@ class FeedbackAnalysis(BaseModel):
     key_points: List[str] = Field(..., description="Key points from the feedback")
 
 class FeedbackResponseSerializer(serializers.Serializer):
-    answer = serializers.JSONField()
+    answer = FeedbackAnalysis.drf_serializer()
 
 class FeedbackView(APIView):
     def post(self, request):
