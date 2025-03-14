@@ -3,3 +3,5 @@ include README.md
 recursive-include src/pydantic2 *
 prune docs
 prune site
+prune assets
+prune tests

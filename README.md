@@ -4,7 +4,7 @@
 
 A powerful AI framework with structured Pydantic response handling, LLM integration, and advanced agent capabilities.
 
-[![Documentation](https://img.shields.io/badge/docs-pydantic2.unrealos.com-blue)](https://pydantic.unrealos.com)
+[![Documentation](https://img.shields.io/badge/docs-pydantic.unrealos.com-blue)](https://pydantic.unrealos.com)
 [![PyPI version](https://badge.fury.io/py/pydantic2.svg)](https://badge.fury.io/py/pydantic2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -14,35 +14,35 @@ Pydantic2 provides **typesafe, structured responses** from LLMs through Pydantic
 
 ### Key Features ✨
 
-- **Structured Responses** ✅
+- **[Structured Responses](https://pydantic.unrealos.com/guides/structured-responses)** ✅
   - Type-safe responses using Pydantic models
   - Automatic validation and parsing
   - IDE support with autocompletion
   - Custom response models with field descriptions
   - Nested model support
 
-- **LLM Integration** 🔌
+- **[LLM Integration](https://pydantic.unrealos.com/api/client)** 🔌
   - Support for multiple LLM providers
   - Unified API for all models
   - Easy provider switching
   - Automatic retries and fallbacks
   - Streaming support
 
-- **Budget Control** 💰
+- **[Budget Control](https://pydantic.unrealos.com/guides/budget-management)** 💰
   - Built-in cost tracking
   - Budget limits per request/user
   - Usage statistics and analytics
   - Cost estimation before requests
   - Detailed usage reports
 
-- **Message Handling** 📝
+- **[Message Handling](https://pydantic.unrealos.com/guides/message-handling)** 📝
   - System and user messages
   - Conversation history
   - Structured data support
   - Support for code blocks
   - Support for JSON and DataFrame inputs
 
-- **Agent System** 🛠️
+- **[Agent System](https://pydantic.unrealos.com/api/agents)** 🛠️
   - Custom tools and functions
   - Gradio UI integration
   - Extensible framework
@@ -57,7 +57,7 @@ Pydantic2 provides **typesafe, structured responses** from LLMs through Pydantic
 - **[OpenRouter](https://openrouter.ai/)**: Default model provider
 - **[SmoLAgents](https://github.com/smol-ai/smol-agents)**: Agent functionality
 
-## Installation 📦
+## [Installation](https://pydantic.unrealos.com/getting-started/installation) 📦
 
 ```bash
 pip install pydantic2
@@ -68,7 +68,7 @@ Set up your API key:
 export OPENROUTER_API_KEY=your_api_key_here
 ```
 
-## Quick Start ⚡
+## [Quick Start](https://pydantic.unrealos.com/getting-started/quick-start) ⚡
 
 ### Basic Example
 
@@ -98,7 +98,7 @@ print("Pros:", ", ".join(response.pros))
 print("Cons:", ", ".join(response.cons))
 ```
 
-### Django Integration
+### [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
 
 ```python
 from rest_framework.views import APIView
@@ -127,7 +127,7 @@ class FeedbackView(APIView):
         return Response(response.model_dump())
 ```
 
-## Configuration 🔧
+## [Configuration](https://pydantic.unrealos.com/getting-started/configuration) 🔧
 
 ```python
 from pydantic2 import Request
@@ -156,37 +156,53 @@ Full documentation is available at [https://pydantic.unrealos.com](https://pydan
 
 ### Key Topics
 
-- [Installation](https://pydantic.unrealos.com/getting-started/installation)
-- [Quick Start Guide](https://pydantic.unrealos.com/getting-started/quick-start)
-- [Basic Usage](https://pydantic.unrealos.com/examples/basic-usage)
-- [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
-- [FastAPI Integration](https://pydantic.unrealos.com/examples/fastapi-integration)
-- [Agent System](https://pydantic.unrealos.com/examples/agent-system)
-- [Message Handling](https://pydantic.unrealos.com/guides/message-handling)
-- [Budget Management](https://pydantic.unrealos.com/guides/budget-management)
+- **Getting Started**
+  - [Installation](https://pydantic.unrealos.com/getting-started/installation)
+  - [Quick Start Guide](https://pydantic.unrealos.com/getting-started/quick-start)
+  - [Configuration](https://pydantic.unrealos.com/getting-started/configuration)
+
+- **Guides**
+  - [Message Handling](https://pydantic.unrealos.com/guides/message-handling)
+  - [Budget Management](https://pydantic.unrealos.com/guides/budget-management)
+  - [Structured Responses](https://pydantic.unrealos.com/guides/structured-responses)
+  - [Usage Tracking](https://pydantic.unrealos.com/guides/usage-tracking)
+
+- **Examples**
+  - [Basic Usage](https://pydantic.unrealos.com/examples/basic-usage)
+  - [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
+  - [FastAPI Integration](https://pydantic.unrealos.com/examples/fastapi-integration)
+  - [Agent System](https://pydantic.unrealos.com/examples/agent-system)
+
+- **API Reference**
+  - [Client](https://pydantic.unrealos.com/api/client)
+  - [Models](https://pydantic.unrealos.com/api/models)
+  - [Usage](https://pydantic.unrealos.com/api/usage)
+  - [Agents](https://pydantic.unrealos.com/api/agents)
 
 ## Why Pydantic2? 🤔
 
-- **Type Safety**: Get structured responses with proper type hints and validation
+- **[Type Safety](https://pydantic.unrealos.com/guides/structured-responses)**: Get structured responses with proper type hints and validation
 - **Efficiency**: Reduce boilerplate code and focus on your application logic
-- **Reliability**: Production-tested with comprehensive error handling
-- **Flexibility**: Support for multiple LLM providers and frameworks
-- **Scalability**: Built for both small projects and enterprise applications
-- **Cost Control**: Built-in budget management and usage tracking
-- **Framework Support**: Seamless integration with Django, FastAPI, and more
-- **Developer Experience**: Great IDE support and documentation
+- **[Reliability](https://pydantic.unrealos.com/guides/usage-tracking)**: Production-tested with comprehensive error handling
+- **[Flexibility](https://pydantic.unrealos.com/api/client)**: Support for multiple LLM providers and frameworks
+- **[Scalability](https://pydantic.unrealos.com/guides/budget-management)**: Built for both small projects and enterprise applications
+- **[Cost Control](https://pydantic.unrealos.com/guides/budget-management)**: Built-in budget management and usage tracking
+- **Framework Support**: Seamless integration with [Django](https://pydantic.unrealos.com/examples/django-integration), [FastAPI](https://pydantic.unrealos.com/examples/fastapi-integration), and more
+- **[Developer Experience](https://pydantic.unrealos.com/getting-started/quick-start)**: Great IDE support and documentation
 
 ## Support & Community 👥
 
 - [GitHub Issues](https://github.com/markolofsen/pydantic2/issues)
 - [Documentation](https://pydantic.unrealos.com)
 - [GitHub Discussions](https://github.com/markolofsen/pydantic2/discussions)
-- Email: [info@unrealos.com](mailto:info@unrealos.com)
+- [Contributing Guide](https://pydantic.unrealos.com/about/contributing)
+- [Security Policy](https://pydantic.unrealos.com/about/security)
+- [Roadmap](https://pydantic.unrealos.com/about/roadmap)
 
 ## License 📝
 
-MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see the [LICENSE](LICENSE) file for details. For more information, see our [License page](https://pydantic.unrealos.com/about/license).
 
 ## Credits ✨
 
-Developed by [Unrealos Inc.](https://unrealos.com/) - We create innovative AI-powered solutions for business.
+Developed by [Unrealos Inc.](https://unrealos.com/) - We create innovative AI-powered solutions for business. Meet our [team](https://pydantic.unrealos.com/about/team).

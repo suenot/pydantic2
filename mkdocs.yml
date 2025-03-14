@@ -23,11 +23,29 @@ nav:
   - Getting Started:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quick-start.md
+    - Configuration: getting-started/configuration.md
+  - Guides:
+    - Message Handling: guides/message-handling.md
+    - Budget Management: guides/budget-management.md
+    - Structured Responses: guides/structured-responses.md
+    - Usage Tracking: guides/usage-tracking.md
   - Examples:
     - Basic Usage: examples/basic-usage.md
     - Django Integration: examples/django-integration.md
+    - FastAPI Integration: examples/fastapi-integration.md
+    - Agent System: examples/agent-system.md
+  - API Reference:
+    - Client: api/client.md
+    - Models: api/models.md
+    - Usage: api/usage.md
+    - Agents: api/agents.md
   - About:
+    - Team: about/team.md
+    - Contributing: about/contributing.md
     - License: about/license.md
+    - Security: about/security.md
+    - Roadmap: about/roadmap.md
+    - Changelog: about/changelog.md
 
 markdown_extensions:
   - admonition
