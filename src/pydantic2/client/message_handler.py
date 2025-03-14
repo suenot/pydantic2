@@ -1,9 +1,7 @@
-import json
-from typing import List, Any, Optional
-from drf_pydantic import BaseModel
+from typing import List, Any, Optional, Dict, Union
 import yaml
 import re
-
+from openai.types.chat import ChatCompletionMessageParam
 from ..utils.logger import logger
 
 
@@ -153,25 +151,26 @@ class MessageHandler:
             msg = self._format_data(message)
             self.messages_block.append(f"[{tag}]\n{msg}\n[/{tag}]")
 
-    def _get_schema_str(self, answer_model: BaseModel) -> str:
-        """Generate schema instructions for the model."""
-        schema = answer_model.model_json_schema()
-        # Remove metadata that might confuse the AI
-        schema.pop('title', None)
-        schema.pop('type', None)
+    # def _get_schema_str(self, answer_model: Any) -> str:
+    #     """Generate schema instructions for the model."""
+    #     schema = answer_model.model_json_schema()
+    #     # Remove metadata that might confuse the AI
+    #     schema.pop('title', None)
+    #     schema.pop('type', None)
 
-        response = f"""
-        Response:
-        - Return only ONE clean JSON object based on the schema.
-        - No code blocks, no extra text, just the JSON object.
-        - Make sure the JSON is valid and properly formatted.
-        - Do not return the schema itself, return only the JSON object based on the schema.
-        [SCHEMA]
-        {json.dumps(schema)}
-        [/SCHEMA]
+    #     response = f"""
+    #     Response:
+    #     - Return only ONE clean JSON object based on the schema.
+    #     - No code blocks, no extra text, just the JSON object.
+    #     - Make sure the JSON is valid and properly formatted.
+    #     - Do not return the schema itself, return only the JSON object based on
+    #       the schema.
+    #     [SCHEMA]
+    #     {json.dumps(schema)}
+    #     [/SCHEMA]
 
-        """
-        return self.trim_message(response)
+    #     """
+    #     return self.trim_message(response)
 
     def trim_message(self, message: str) -> str:
         """Trim all types of whitespace from the message using regex.
@@ -196,10 +195,17 @@ class MessageHandler:
             trimmed_lines.pop()
         return '\n'.join(trimmed_lines)
 
-    def get_messages(self, answer_model) -> List[dict]:
-        """Get all messages in the correct order with schema instructions."""
+    def get_messages(self) -> List[ChatCompletionMessageParam]:
+        """Get all messages in the correct order with schema instructions.
+
+        Args:
+            answer_model: The Pydantic model to use for response validation
+
+        Returns:
+            List of message dictionaries in the format expected by LiteLLM
+        """
         messages = [
-            {"role": "user", "content": self._get_schema_str(answer_model)}
+            # {"role": "user", "content": self._get_schema_str(answer_model)}
         ]
 
         for message in self.messages_system:
@@ -223,3 +229,64 @@ class MessageHandler:
 
         # trim spaces from each line
         return messages
+
+    def add_prompt(self, prompt: Union[str, List[Dict[str, str]]]) -> None:
+        """Add a prompt to the message handler.
+
+        Args:
+            prompt: Either a string prompt or a list of message dictionaries
+                   in the format {"role": "...", "content": "..."}
+        """
+        if isinstance(prompt, str):
+            # If prompt is a string, add it as a user message
+            self.add_message_user(prompt)
+        elif isinstance(prompt, list):
+            # If prompt is a list of message dictionaries
+            for message in prompt:
+                if not isinstance(message, dict):
+                    raise MessageFormatError("Each message must be a dictionary")
+
+                role = message.get("role", "").lower()
+                content = message.get("content", "")
+
+                if not role or not content:
+                    raise MessageFormatError("Message must have 'role' and 'content'")
+
+                if role == "user":
+                    self.add_message_user(content)
+                elif role == "assistant":
+                    self.add_message_assistant(content)
+                elif role == "system":
+                    self.add_message_system(content)
+                else:
+                    raise MessageFormatError(f"Unsupported role: {role}")
+        else:
+            raise MessageFormatError("Prompt must be a string or a list of messages")
+
+    def clear_messages(self) -> None:
+        """Clear all messages."""
+        self.messages_user = []
+        self.messages_assistant = []
+        self.messages_system = []
+        self.messages_block = []
+
+    def get_formatted_prompt(self) -> str:
+        """Get a formatted string representation of all messages.
+
+        Returns:
+            A string with all messages formatted for display
+        """
+        formatted = []
+
+        for msg in self.messages_system:
+            formatted.append(f"[SYSTEM]\n{msg}\n[/SYSTEM]")
+
+        for msg in self.messages_assistant:
+            formatted.append(f"[ASSISTANT]\n{msg}\n[/ASSISTANT]")
+
+        for msg in self.messages_user:
+            formatted.append(f"[USER]\n{msg}\n[/USER]")
+
+        formatted.extend(self.messages_block)
+
+        return "\n\n".join(formatted)

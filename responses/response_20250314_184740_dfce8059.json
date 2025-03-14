@@ -1,0 +1,23 @@
+{
+  "request_id": "dfce8059-8b26-4521-b96e-51b172dea0f2",
+  "timestamp": "2025-03-14T18:47:40.256391",
+  "model": "openrouter/openai/gpt-3.5-turbo",
+  "user_id": "6b7914a7-7126-4505-8c06-b2c1434f9cd8",
+  "prompt": "Jason is 25 years old and enjoys hiking, coding, and reading.",
+  "response": {
+    "name": "Jason",
+    "age": 25,
+    "interests": [
+      "hiking",
+      "coding",
+      "reading"
+    ]
+  },
+  "token_count": 88,
+  "prompt_tokens": 56,
+  "completion_tokens": 32,
+  "cost_usd": 0.00014800000000000002,
+  "prompt_cost_usd": 8.400000000000001e-05,
+  "completion_cost_usd": 6.4e-05,
+  "response_time_seconds": 1.848
+}

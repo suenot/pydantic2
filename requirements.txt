@@ -9,7 +9,7 @@ isort
 questionary
 
 # Runtime dependencies
-litellm2
+litellm
 pydantic
 diskcache
 smolagents
@@ -17,3 +17,5 @@ smolagents[gradio]
 colorlog
 drf-pydantic
 pyyaml
+peewee
+instructor

@@ -1,7 +1,7 @@
 from pydantic import Field
 from typing import List, Optional
 
-from src.pydantic2 import Request, LiteLLMClient
+from pydantic2 import Request, LiteLLMClient
 from drf_pydantic import BaseModel
 
 
@@ -48,7 +48,7 @@ def test_client_add_message():
         online=False,
         temperature=0.7,
         max_tokens=500,
-        budget_limit=0.05,
+        max_budget=0.05,
     )
 
     client = LiteLLMClient(config)
@@ -57,7 +57,7 @@ def test_client_add_message():
     test_message = "This is a test message"
     client.msg.add_message_user(test_message)
 
-    # Check if the message was added - pass the answer_model parameter
-    messages = client.msg.get_messages(answer_model=CustomAnswer)
+    # Check if the message was added
+    messages = client.msg.get_messages()
     assert len(messages) > 0
     assert any(msg.get("content") == test_message for msg in messages)

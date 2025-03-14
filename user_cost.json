@@ -1,0 +1,704 @@
+{
+    "cc207923-cabe-4c7d-86e2-70e6f99a45a3": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951319.689527,
+        "last_updated_at": 1741951319.689527,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "ba329753-e13a-46f3-8505-b1c221bf3ec6": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951582.3641899,
+        "last_updated_at": 1741951582.3641899,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "f5bdd8f7-98a8-4a9f-893a-0319e45f60d8": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951672.8144069,
+        "last_updated_at": 1741951672.8144069,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "15fd2de6-0b3d-4eac-9051-0a54ef10b684": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951685.872422,
+        "last_updated_at": 1741951685.872422,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "26cf7880-0b3e-4600-8977-79f60b3f8cbf": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951690.77953,
+        "last_updated_at": 1741951690.77953,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "3c21d57d-8f5a-462b-a383-fd220390b39b": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951696.372035,
+        "last_updated_at": 1741951696.372035,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "e09df0eb-2f78-4015-83fb-b340741b889b": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951737.7764218,
+        "last_updated_at": 1741951737.7764218,
+        "current_cost": 2.7749999999999997e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.7749999999999997e-05
+        }
+    },
+    "35106e90-af67-4c85-bba5-c05053910fda": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951765.9368892,
+        "last_updated_at": 1741951765.9368892,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "1db016dd-0697-4bcd-b8a0-b3bd7789ce03": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951773.065064,
+        "last_updated_at": 1741951773.065064,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "6ce19755-6a84-4c43-8793-791d0c7697c0": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951786.139441,
+        "last_updated_at": 1741951786.139441,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "5b968fbe-2878-4c5c-8ce9-1caf41c34b4b": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951796.5728588,
+        "last_updated_at": 1741951796.5728588,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "1": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741951811.7175071,
+        "last_updated_at": 1741951811.7175071,
+        "current_cost": 5.52e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 5.52e-05
+        }
+    },
+    "e4333d17-70be-4d5c-860b-10c7a4906c20": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741952530.459935,
+        "last_updated_at": 1741952530.459935,
+        "current_cost": 3.12e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 3.12e-05
+        }
+    },
+    "04be80cb-3e8c-4d02-9877-9d048264ab63": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741952657.256607,
+        "last_updated_at": 1741952657.256607,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "befa2c1a-e153-404f-929a-394734d96efe": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741952877.77357,
+        "last_updated_at": 1741952877.77357,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "751d3246-7a51-45fa-9f2a-3d25c7dd4a27": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953343.310117,
+        "last_updated_at": 1741953343.310117,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "d8da465f-fc1e-4672-b688-c65a3f090bb6": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953484.203988,
+        "last_updated_at": 1741953484.203988,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "b969a167-2b79-4233-b096-4849e198ddd5": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953494.8993258,
+        "last_updated_at": 1741953494.8993258,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "0f29775a-f6f4-49bb-a4ce-5aa51ddb9a0d": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953533.641529,
+        "last_updated_at": 1741953533.641529,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "6877c305-5921-474a-ab7c-b1912ac56663": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953620.6229131,
+        "last_updated_at": 1741953620.6229131,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "6251f672-227e-411c-b0fe-2a86160d9ed8": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953702.583607,
+        "last_updated_at": 1741953702.583607,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "33c0115b-322a-42f4-a58d-4f047791a667": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953749.578288,
+        "last_updated_at": 1741953749.578288,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "a9cd23fa-bcb0-44e4-b7e3-bbaf83eec2ce": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953763.4137878,
+        "last_updated_at": 1741953763.4137878,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "049b804a-df74-4890-a4e5-5bac05359729": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741953839.293607,
+        "last_updated_at": 1741953839.293607,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "4c983369-1dcb-4f5a-97b0-b3800b442a62": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954061.694829,
+        "last_updated_at": 1741954061.694829,
+        "current_cost": 3.12e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 3.12e-05
+        }
+    },
+    "878da758-5179-4aaf-bdde-ad6a75896ae3": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954204.5354528,
+        "last_updated_at": 1741954204.5354528,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "cd92f9ee-1e90-4eda-97ab-42ea6f756a83": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954411.067314,
+        "last_updated_at": 1741954411.067314,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "a96f2b07-14bc-4ba9-a95f-21f898477854": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954421.971974,
+        "last_updated_at": 1741954421.971974,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "eb0852f6-b346-4742-9cae-7bd34314255a": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954451.203917,
+        "last_updated_at": 1741954451.203917,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "4ae3c1b7-ce45-40f4-8875-68e9f878b02a": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954475.97722,
+        "last_updated_at": 1741954475.97722,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "5757e7f4-87c1-4717-82b1-9a69228cc802": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954499.876781,
+        "last_updated_at": 1741954499.876781,
+        "current_cost": 2.76e-05,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 2.76e-05
+        }
+    },
+    "d813c387-220a-48c1-a44e-509708cf88aa": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954816.820479,
+        "last_updated_at": 1741954816.820479
+    },
+    "941bd550-bb35-4797-8094-52b68e77cf67": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954864.566973,
+        "last_updated_at": 1741954864.566973
+    },
+    "89cdf60d-9833-4d4a-9557-60d095fe9ae3": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954906.6848462,
+        "last_updated_at": 1741954906.6848462
+    },
+    "b6bfcbbb-bc44-4c90-903f-eef9d1a251d3": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954954.771852,
+        "last_updated_at": 1741954954.771852
+    },
+    "0758c900-2ae6-4c7a-8277-5796a50de7e6": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741954973.70302,
+        "last_updated_at": 1741954973.70302
+    },
+    "accdb1a8-fbfb-4f04-bd35-5fd42d4eb909": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955315.4319649,
+        "last_updated_at": 1741955315.4319649
+    },
+    "94acf9a2-4bf3-470d-b6f9-3993f6af76f0": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955353.160924,
+        "last_updated_at": 1741955353.160924
+    },
+    "8907937d-2173-4c1d-8dff-c6cabc1437b8": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955370.5283399,
+        "last_updated_at": 1741955370.5283399
+    },
+    "1adcbbd2-eac9-4d52-84ea-b852d7cc10c1": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955532.288599,
+        "last_updated_at": 1741955532.288599
+    },
+    "9f519449-a88d-48b5-bb50-c03a8275d4d0": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955558.5792398,
+        "last_updated_at": 1741955558.5792398
+    },
+    "781ece5e-34c4-49e3-a365-ef2a4070e420": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741955677.6498911,
+        "last_updated_at": 1741955677.6498911
+    },
+    "b67a53f6-4314-464a-82a7-bf9260ca15b1": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956074.184546,
+        "last_updated_at": 1741956074.184546
+    },
+    "77f850b0-e093-459e-b5bb-23c7a1a5c119": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956100.290828,
+        "last_updated_at": 1741956100.290828
+    },
+    "5e460bb0-c699-4335-9ea4-1ee5df6e5664": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956123.236814,
+        "last_updated_at": 1741956123.236814
+    },
+    "feec4e41-9575-409f-a8ac-4661797a7ac5": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956137.0728052,
+        "last_updated_at": 1741956137.0728052
+    },
+    "9358816a-3fbb-46f0-b607-85cfa9458162": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956165.3790982,
+        "last_updated_at": 1741956165.3790982
+    },
+    "d83f0729-2f1a-4365-a06f-2e8e940130df": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956177.524064,
+        "last_updated_at": 1741956177.524064
+    },
+    "656e220b-e5f9-4d2f-9209-c1adde979301": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956247.7266219,
+        "last_updated_at": 1741956247.7266219
+    },
+    "9bd55fcc-50c1-4fea-ae29-4df93c55067a": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956252.673279,
+        "last_updated_at": 1741956252.673279
+    },
+    "f1048e2d-2b7c-4f8c-9da2-c8002f96b861": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956296.2619572,
+        "last_updated_at": 1741956296.2619572
+    },
+    "d798983b-71b0-4ac3-b1e9-039071736647": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956310.38661,
+        "last_updated_at": 1741956310.38661
+    },
+    "b51f75a2-c634-4bba-9971-be221685cf34": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956326.825203,
+        "last_updated_at": 1741956326.825203
+    },
+    "8d9ef38e-c760-485b-a07e-a541f168215e": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956521.371376,
+        "last_updated_at": 1741956521.371376
+    },
+    "d6960489-3818-40e6-8a86-a397a1ca900f": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956652.153717,
+        "last_updated_at": 1741956652.153717
+    },
+    "d2f12740-a9b7-45f3-a2da-4756e6d424fa": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956681.141749,
+        "last_updated_at": 1741956681.141749
+    },
+    "b9439062-1651-47e5-bbf8-f1bb96fa524e": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956687.737097,
+        "last_updated_at": 1741956687.737097
+    },
+    "0687961e-bff1-4798-b3bf-e0baa183a2e6": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956821.0716732,
+        "last_updated_at": 1741956821.0716732
+    },
+    "ce62d4b5-1202-49bb-9f32-366d484e6d29": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956840.981924,
+        "last_updated_at": 1741956840.981924
+    },
+    "a68db285-677b-40dd-bd53-371d29c50f98": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956881.061055,
+        "last_updated_at": 1741956881.061055,
+        "current_cost": 0.00012555,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00012555
+        }
+    },
+    "d249cb24-1ceb-4a52-b780-dc4384a727a0": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956891.388426,
+        "last_updated_at": 1741956891.388426,
+        "current_cost": 0.00014954999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00014954999999999998
+        }
+    },
+    "e427a535-53bc-4a7b-af24-c466391c1a86": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956901.514836,
+        "last_updated_at": 1741956901.514836
+    },
+    "8fcc6e89-239b-4016-94dc-2c88810bf239": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956903.030921,
+        "last_updated_at": 1741956903.030921,
+        "current_cost": 0.00016094999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00016094999999999998
+        }
+    },
+    "746d9c20-0b8a-4268-b594-10f380afc2c0": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741956928.6624482,
+        "last_updated_at": 1741956928.6624482,
+        "current_cost": 0.00014294999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00014294999999999998
+        }
+    },
+    "fcd1e178-3768-4f2a-b2c2-0cb88781ac42": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957199.556931,
+        "last_updated_at": 1741957199.556931
+    },
+    "281ac0d6-0087-4f52-9e6e-f36033b38c97": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957229.5824199,
+        "last_updated_at": 1741957229.5824199,
+        "current_cost": 0.00013754999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00013754999999999998
+        }
+    },
+    "70b0b3dd-af33-4e38-84ae-9ba40672119c": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957381.81648,
+        "last_updated_at": 1741957381.81648,
+        "current_cost": 0.00014235,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00014235
+        }
+    },
+    "5c4410c7-a8eb-406a-986f-64f9bbc5c62f": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957397.39431,
+        "last_updated_at": 1741957397.39431,
+        "current_cost": 0.00013155,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00013155
+        }
+    },
+    "9b3e3069-2cfd-42ab-abba-092809bff1ca": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957496.221969,
+        "last_updated_at": 1741957496.221969,
+        "current_cost": 0.00011414999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00011414999999999998
+        }
+    },
+    "c4742077-1ed3-40dd-b2ee-f28c6cf80a92": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957518.760692,
+        "last_updated_at": 1741957518.760692,
+        "current_cost": 0.00014294999999999998,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00014294999999999998
+        }
+    },
+    "e57e43b9-bdf1-4f2c-960b-09568822ec09": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957547.8390841,
+        "last_updated_at": 1741957547.8390841,
+        "current_cost": 0.0004785,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004785
+        }
+    },
+    "22fb86dd-e4c3-471f-bc5a-58f2223cd184": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957573.966688,
+        "last_updated_at": 1741957573.966688
+    },
+    "973bb7f8-fb47-4263-8588-004fca53a87a": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957584.016104,
+        "last_updated_at": 1741957584.016104
+    },
+    "7456ab17-f889-49bb-84c1-666662bc6089": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957596.884489,
+        "last_updated_at": 1741957596.884489,
+        "current_cost": 0.0004629,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004629
+        }
+    },
+    "bbc554ac-8060-466e-9880-13f1077bd161": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957647.944792,
+        "last_updated_at": 1741957647.944792,
+        "current_cost": 0.0004653,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004653
+        }
+    },
+    "c2244358-999b-4885-9695-f644ec3c7446": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957753.362323,
+        "last_updated_at": 1741957753.362323,
+        "current_cost": 0.0004455,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004455
+        }
+    },
+    "3570ffaf-e330-489a-bc98-1e97721f0da5": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957794.527942,
+        "last_updated_at": 1741957794.527942,
+        "current_cost": 0.0004455,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004455
+        }
+    },
+    "2006f56f-5c99-4df7-94c8-3a735823004b": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741957815.5439732,
+        "last_updated_at": 1741957815.5439732,
+        "current_cost": 0.00048149999999999994,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00048149999999999994
+        }
+    },
+    "40819a3e-cbf8-4a20-af37-002cd0394fa9": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741958382.517458,
+        "last_updated_at": 1741958382.517458,
+        "current_cost": 0.00042689999999999997,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00042689999999999997
+        }
+    },
+    "0d24362b-3704-4623-8c1c-efcd705b64f8": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741958439.0667598,
+        "last_updated_at": 1741958439.0667598,
+        "current_cost": 0.0004311,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004311
+        }
+    },
+    "bbf6e3ca-9298-4465-8df0-93a5afc10b13": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741958542.4648151,
+        "last_updated_at": 1741958542.4648151,
+        "current_cost": 0.0004233,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004233
+        }
+    },
+    "0fd45670-886e-472a-b591-96d8b043804a": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741958679.554694,
+        "last_updated_at": 1741958679.554694,
+        "current_cost": 0.0004575,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.0004575
+        }
+    },
+    "50e8ddd3-c518-4376-80e8-c93555f78937": {
+        "total_budget": 0.0001,
+        "duration": 28,
+        "created_at": 1741958717.671401,
+        "last_updated_at": 1741958717.671401,
+        "current_cost": 0.00042869999999999996,
+        "model_cost": {
+            "openai/gpt-4o-mini-2024-07-18": 0.00042869999999999996
+        }
+    }
+}

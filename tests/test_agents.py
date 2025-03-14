@@ -3,7 +3,7 @@ Advanced AI agent with various tools and categories
 """
 
 # Import standard libraries
-from src.pydantic2.agents import SimpleAgent
+from pydantic2.agents import SimpleAgent
 from smolagents.tools import tool
 import os
 import sys

@@ -65,6 +65,11 @@ class AILogger:
         if cls._logger:
             cls._logger.error(message)
 
+    @classmethod
+    def success(cls, message: str):
+        if cls._logger:
+            cls._logger.info(f"\033[92m{message}\033[0m")
+
 
 # Create global logger instance
 logger = AILogger()

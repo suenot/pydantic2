@@ -4,7 +4,7 @@ from pydantic import Field, BaseModel
 import json
 from datetime import datetime
 
-from ..config.config import save_response_log
+from ...utils.config import save_response_log
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -23,6 +23,8 @@ class Request(BaseModel):
     answer_model: Type[BaseModel] = Field(..., description="Custom model for the answer content")
     verbose: Optional[bool] = Field(default=False, description="Enable verbose logging")
     logs: Optional[bool] = Field(default=False, description="Enable logging to file")
+    client_id: Optional[str] = Field(default=None, description="Client ID")
+    user_id: Optional[str] = Field(default=None, description="User ID")
 
     def model_dump_json(self, **kwargs) -> str:
         data = self.model_dump()

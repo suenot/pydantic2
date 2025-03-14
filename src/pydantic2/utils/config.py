@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Root directory and paths configuration
-ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
-LOGS_DIR = os.path.join(ROOT_DIR, "logs")
+MODULE_DIR = pathlib.Path(__file__).parent.parent
+LOGS_DIR = os.path.join(MODULE_DIR, "logs")
 
 
 def setup_logging():
@@ -54,7 +54,7 @@ def save_response_log(response_data: dict, model_name: str) -> str:
 def setup_caching():
     litellm.enable_cache(
         type=LiteLLMCacheType.DISK,
-        disk_cache_dir=os.path.join(ROOT_DIR, ".cache"),
+        disk_cache_dir=os.path.join(MODULE_DIR, ".cache"),
     )
     logger.debug("LiteLLM cache configured - using disk cache")
 
