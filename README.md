@@ -4,7 +4,7 @@
 
 A powerful AI framework with structured Pydantic response handling, LLM integration, and advanced agent capabilities.
 
-[![Documentation](https://img.shields.io/badge/docs-pydantic2.unrealos.com-blue)](https://pydantic2.unrealos.com)
+[![Documentation](https://img.shields.io/badge/docs-pydantic2.unrealos.com-blue)](https://pydantic.unrealos.com)
 [![PyPI version](https://badge.fury.io/py/pydantic2.svg)](https://badge.fury.io/py/pydantic2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -152,18 +152,18 @@ config = Request(
 
 ## Documentation 📚
 
-Full documentation is available at [https://pydantic2.unrealos.com](https://pydantic2.unrealos.com)
+Full documentation is available at [https://pydantic.unrealos.com](https://pydantic.unrealos.com)
 
 ### Key Topics
 
-- [Installation](https://pydantic2.unrealos.com/getting-started/installation)
-- [Quick Start Guide](https://pydantic2.unrealos.com/getting-started/quick-start)
-- [Basic Usage](https://pydantic2.unrealos.com/examples/basic-usage)
-- [Django Integration](https://pydantic2.unrealos.com/examples/django-integration)
-- [FastAPI Integration](https://pydantic2.unrealos.com/examples/fastapi-integration)
-- [Agent System](https://pydantic2.unrealos.com/examples/agent-system)
-- [Message Handling](https://pydantic2.unrealos.com/guides/message-handling)
-- [Budget Management](https://pydantic2.unrealos.com/guides/budget-management)
+- [Installation](https://pydantic.unrealos.com/getting-started/installation)
+- [Quick Start Guide](https://pydantic.unrealos.com/getting-started/quick-start)
+- [Basic Usage](https://pydantic.unrealos.com/examples/basic-usage)
+- [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
+- [FastAPI Integration](https://pydantic.unrealos.com/examples/fastapi-integration)
+- [Agent System](https://pydantic.unrealos.com/examples/agent-system)
+- [Message Handling](https://pydantic.unrealos.com/guides/message-handling)
+- [Budget Management](https://pydantic.unrealos.com/guides/budget-management)
 
 ## Why Pydantic2? 🤔
 
@@ -179,7 +179,7 @@ Full documentation is available at [https://pydantic2.unrealos.com](https://pyda
 ## Support & Community 👥
 
 - [GitHub Issues](https://github.com/markolofsen/pydantic2/issues)
-- [Documentation](https://pydantic2.unrealos.com)
+- [Documentation](https://pydantic.unrealos.com)
 - [GitHub Discussions](https://github.com/markolofsen/pydantic2/discussions)
 - Email: [info@unrealos.com](mailto:info@unrealos.com)
 
