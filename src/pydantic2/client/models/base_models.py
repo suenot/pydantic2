@@ -19,7 +19,7 @@ class Request(BaseModel):
     fallbacks: Optional[List[str]] = Field(default=[], description="Fallback models in case of failure")
     stream: Optional[bool] = Field(default=False, description="Enable streaming response")
     cache_prompt: Optional[bool] = Field(default=False, description="Cache prompt for reuse")
-    max_budget: Optional[float] = Field(None, description="Budget limit in USD for the request")
+    max_budget: Optional[float] = Field(default=0.0, description="Budget limit in USD for the request")
     answer_model: Type[BaseModel] = Field(..., description="Custom model for the answer content")
     verbose: Optional[bool] = Field(default=False, description="Enable verbose logging")
     logs: Optional[bool] = Field(default=False, description="Enable logging to file")

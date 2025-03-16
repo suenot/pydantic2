@@ -97,7 +97,7 @@ class LiteLLMClient:
         # Make sure messages are not empty
         if not self.config.messages:
             # Try to get messages from message handler
-            messages = self.msg.get_messages()
+            messages = self.msg.get_messages(self.config.answer_model)
             if messages:
                 # Convert to the expected type if needed
                 # Note: Type compatibility issue is ignored here
@@ -301,71 +301,54 @@ class LiteLLMClient:
                 # Use instructor for structured output
                 logger.info("Using instructor for structured output")
                 try:
-                    # Преобразуем сообщения в формат, ожидаемый instructor
-                    formatted_messages = []
-                    for msg in messages:
-                        formatted_messages.append({
-                            "role": msg.get("role", "user"),
-                            "content": msg.get("content", "")
-                        })
+                    messages = self.msg.get_messages(self.config.answer_model)
 
-                    # First get the raw response from LiteLLM
-                    try:
-                        raw_response = completion(
-                            model=model,
-                            messages=self.msg.get_messages(),
-                        )
-                        # Store the raw response for cost calculation
-                        self.last_response = raw_response
-
-                        # Update token count in metadata
-                        if hasattr(raw_response, 'usage'):
-                            usage = getattr(raw_response, 'usage')
-                            if hasattr(usage, 'total_tokens'):
-                                self.meta.token_count = usage.total_tokens
-                            elif isinstance(usage, dict) and 'total_tokens' in usage:
-                                self.meta.token_count = usage['total_tokens']
-
-                        logger.info(
-                            f"Raw response token count: {self.meta.token_count}"
-                        )
-                    except Exception as e:
-                        logger.error(f"Error getting raw response: {str(e)}")
-                        # Continue with instructor even if raw response fails
-
-                    # Now use instructor for structured output
-                    response: BaseModel = self.client.chat.completions.create(
+                    # Get raw completion first
+                    raw_response = completion(
                         model=model,
-                        messages=self.msg.get_messages(),
-                        response_model=self.config.answer_model,
+                        messages=messages,
                     )
+
+                    # Store for cost calculation
+                    self.last_response = raw_response
+
+                    # Extract the response content
+                    if hasattr(raw_response, 'choices') and raw_response.choices:
+                        content = raw_response.choices[0].message.content
+                    else:
+                        raise ValueError("No content in response")
+
+                    # Parse the content into the answer model
+                    if self.config.answer_model:
+                        response = self.config.answer_model.model_validate_json(content)
+                    else:
+                        raise ValueError("No answer model specified")
+
+                    # Update metadata
+                    self.meta.model_used = model
+                    response_time = time.time() - start_time
+                    self.meta.response_time_seconds = round(response_time, 3)
+
+                    # Update token count if available
+                    if hasattr(raw_response, 'usage'):
+                        usage = raw_response.usage
+                        if hasattr(usage, 'total_tokens'):
+                            self.meta.token_count = usage.total_tokens
+                        elif isinstance(usage, dict) and 'total_tokens' in usage:
+                            self.meta.token_count = usage['total_tokens']
+
+                    # Log success
+                    usage_info = self.get_usage_info()
+                    self.usage_tracker.log_success(
+                        response_json=response.model_dump(),
+                        usage_info=usage_info
+                    )
+
+                    return response
+
                 except Exception as e:
-                    logger.error(
-                        f"Error using instructor chat.completions.create: {str(e)}"
-                    )
+                    logger.error(f"Error processing response: {str(e)}")
                     raise
-
-                # Update metadata
-                self.meta.model_used = model
-                response_time = time.time() - start_time
-                self.meta.response_time_seconds = round(response_time, 3)
-
-                # Log success in the database
-                usage_info = self.get_usage_info()
-                self.usage_tracker.log_success(
-                    response_json=response.model_dump_json(),
-                    usage_info=usage_info
-                )
-
-                # Update budget if budget manager is enabled
-                if self.budget_manager and self.config.user_id and self.last_response:
-                    try:
-                        self.update_cost(completion_obj=self.last_response)
-                    except Exception as e:
-                        logger.warning(f"Failed to update budget: {str(e)}")
-
-                # Cast the response to the expected type T
-                return response  # type: ignore
 
             except Exception as e:
                 logger.warning(f"Error with model {model}: {str(e)}")

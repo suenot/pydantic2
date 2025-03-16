@@ -138,7 +138,7 @@ messages = client.msg.get_messages()
 You can clear all messages in the conversation:
 
 ```python
-client.msg.clear_messages()
+client.msg.clear()
 ```
 
 ## Complete Example

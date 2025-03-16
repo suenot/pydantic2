@@ -19,6 +19,7 @@ drf-pydantic
 pyyaml
 peewee
 instructor
+beautifulsoup4
 
 # Documentation
 mkdocs

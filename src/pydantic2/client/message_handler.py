@@ -1,6 +1,7 @@
 from typing import List, Any, Optional, Dict, Union
 import yaml
 import re
+import json
 from openai.types.chat import ChatCompletionMessageParam
 from ..utils.logger import logger
 
@@ -15,6 +16,13 @@ class MessageHandler:
     ALLOWED_TYPES = (str, int, float, bool, dict, list)
 
     def __init__(self):
+        self.messages_user = []
+        self.messages_assistant = []
+        self.messages_system = []
+        self.messages_block = []
+
+    def clear(self) -> None:
+        """Clear all messages."""
         self.messages_user = []
         self.messages_assistant = []
         self.messages_system = []
@@ -96,6 +104,9 @@ class MessageHandler:
         Raises:
             MessageFormatError: If message type is not supported
         """
+        if not message:
+            return
+
         self._validate_message(message)
 
         if split_lists and isinstance(message, list):
@@ -151,26 +162,26 @@ class MessageHandler:
             msg = self._format_data(message)
             self.messages_block.append(f"[{tag}]\n{msg}\n[/{tag}]")
 
-    # def _get_schema_str(self, answer_model: Any) -> str:
-    #     """Generate schema instructions for the model."""
-    #     schema = answer_model.model_json_schema()
-    #     # Remove metadata that might confuse the AI
-    #     schema.pop('title', None)
-    #     schema.pop('type', None)
+    def _get_schema_str(self, answer_model: Any) -> str:
+        """Generate schema instructions for the model."""
+        schema = answer_model.model_json_schema()
+        # Remove metadata that might confuse the AI
+        schema.pop('title', None)
+        schema.pop('type', None)
 
-    #     response = f"""
-    #     Response:
-    #     - Return only ONE clean JSON object based on the schema.
-    #     - No code blocks, no extra text, just the JSON object.
-    #     - Make sure the JSON is valid and properly formatted.
-    #     - Do not return the schema itself, return only the JSON object based on
-    #       the schema.
-    #     [SCHEMA]
-    #     {json.dumps(schema)}
-    #     [/SCHEMA]
+        response = f"""
+        Response:
+        - Return only ONE clean JSON object based on the schema.
+        - No code blocks, no extra text, just the JSON object.
+        - Make sure the JSON is valid and properly formatted.
+        - Do not return the schema itself, return only the JSON object based on
+          the schema.
+        [SCHEMA]
+        {json.dumps(schema)}
+        [/SCHEMA]
 
-    #     """
-    #     return self.trim_message(response)
+        """
+        return self.trim_message(response)
 
     def trim_message(self, message: str) -> str:
         """Trim all types of whitespace from the message using regex.
@@ -195,7 +206,7 @@ class MessageHandler:
             trimmed_lines.pop()
         return '\n'.join(trimmed_lines)
 
-    def get_messages(self) -> List[ChatCompletionMessageParam]:
+    def get_messages(self, answer_model: Any) -> List[ChatCompletionMessageParam]:
         """Get all messages in the correct order with schema instructions.
 
         Args:
@@ -205,7 +216,7 @@ class MessageHandler:
             List of message dictionaries in the format expected by LiteLLM
         """
         messages = [
-            # {"role": "user", "content": self._get_schema_str(answer_model)}
+            {"role": "user", "content": self._get_schema_str(answer_model)}
         ]
 
         for message in self.messages_system:
@@ -262,13 +273,6 @@ class MessageHandler:
                     raise MessageFormatError(f"Unsupported role: {role}")
         else:
             raise MessageFormatError("Prompt must be a string or a list of messages")
-
-    def clear_messages(self) -> None:
-        """Clear all messages."""
-        self.messages_user = []
-        self.messages_assistant = []
-        self.messages_system = []
-        self.messages_block = []
 
     def get_formatted_prompt(self) -> str:
         """Get a formatted string representation of all messages.

@@ -278,10 +278,10 @@ Gets all messages in the conversation.
 messages = client.msg.get_messages()
 ```
 
-#### clear_messages
+#### clear
 
 ```python
-def clear_messages(self) -> None:
+def clear(self) -> None:
     """Clear all messages in the conversation."""
 ```
 
@@ -289,7 +289,7 @@ Clears all messages in the conversation.
 
 **Example**:
 ```python
-client.msg.clear_messages()
+client.msg.clear()
 ```
 
 ## Meta
