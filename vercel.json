@@ -1,5 +1,4 @@
 {
-    "buildCommand": "pip install mkdocs mkdocs-material mkdocstrings[python] mkdocs-minify-plugin mkdocs-git-revision-date-localized-plugin 'mkdocs-material[imaging]' && mkdocs build -f www/mkdocs.yml",
     "outputDirectory": "www/site",
     "framework": null,
     "routes": [
