@@ -30,7 +30,7 @@ class DeployManager:
         # Defining command groups
         self.commands = {
             "Development": {
-                'Check securuty': self.check_security,
+                'Check security': self.check_security,
                 "Check Environment": self.check_environment,
                 "Install Package": self.install_package,
                 "Run Tests": self.run_tests,
