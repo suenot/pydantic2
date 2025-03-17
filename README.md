@@ -258,7 +258,7 @@ response = client.generate(result_type=ProductAnalysis)
 
 ## License 📝
 
-MIT License - see the [LICENSE](LICENSE) file for details. For more information, see our [License page](https://pydantic.unrealos.com/about/license).
+MIT License - see the [LICENSE](LICENSE) file for details. For more information, see our [License page](https://raw.githubusercontent.com/markolofsen/pydantic2/refs/heads/main/LICENSE)
 
 ## Credits ✨
 
