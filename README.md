@@ -255,9 +255,6 @@ response = client.generate(result_type=ProductAnalysis)
 - [GitHub Issues](https://github.com/markolofsen/pydantic2/issues)
 - [Documentation](https://pydantic.unrealos.com)
 - [GitHub Discussions](https://github.com/markolofsen/pydantic2/discussions)
-- [Contributing Guide](https://pydantic.unrealos.com/about/contributing)
-- [Security Policy](https://pydantic.unrealos.com/about/security)
-- [Roadmap](https://pydantic.unrealos.com/about/roadmap)
 
 ## License 📝
 
