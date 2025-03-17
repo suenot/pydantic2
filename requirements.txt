@@ -16,12 +16,9 @@ semver
 # Runtime dependencies
 pydantic
 pydantic-ai
-diskcache
 colorlog
-drf-pydantic
 pyyaml
 peewee
-instructor
 beautifulsoup4
 python-dotenv
 

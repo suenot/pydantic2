@@ -46,6 +46,7 @@ include = [
     "pyproject.toml",
 ]
 exclude = [
+    "src/pydantic2/db/*",
     "tests/*",
     "examples/*",
     "requirements.txt",
@@ -87,33 +88,19 @@ Homepage = "https://pydantic.unrealos.com/"
 
 [tool.poetry.dependencies]
 python = ">=3.11"
-litellm = "^1.63.6"
 pydantic = "^2.9.2"
-diskcache = "^5.6.3"
+pydantic-ai = "^0.0.40"
 colorlog = "^6.7.0"
-drf-pydantic = "^2.5.1"
 typing-extensions = "^4.10.0"
 peewee = "^3.17.0"
-instructor = "^1.1.0"
 beautifulsoup4 = "^4.12.0"
 pyyaml = "^6.0.2"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.extras]
 all = [
-    "drf-pydantic",
-    "instructor",
     "beautifulsoup4",
 ]
-api = [
-    "drf-pydantic",
-]
-parsing = [
-    "beautifulsoup4",
-]
-ai = [
-    "instructor",
-]
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"

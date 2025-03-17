@@ -3,14 +3,28 @@ from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.usage import Usage
+from pydantic_ai.settings import ModelSettings
 from .message_handler import MessageHandler
-from .prices.prices_openrouter import OpenRouterPrices
 from .usage.usage_info import UsageInfo
+from .usage.model_prices import ModelPriceManager
 import os
 from dotenv import load_dotenv
+import time
+import uuid
+import logging
+import asyncio
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logger = logging.getLogger("pydantic_ai_client")
+
+
+class BudgetExceeded(Exception):
+    """Raised when a request would exceed the user's budget limit."""
+    pass
 
 
 class PydanticAIClient:
@@ -21,27 +35,41 @@ class PydanticAIClient:
         model_name: str = "openai/gpt-4o-mini-2024-07-18",
         base_url: str = "https://openrouter.ai/api/v1",
         api_key: Optional[str] = None,
-        usage_db_path: Optional[str] = None
+        client_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        verbose: bool = False,
+        retries: int = 3,
+        online: bool = False,
+        max_budget: Optional[float] = None,
+        model_settings: Optional[ModelSettings] = None,
     ):
-        """Initialize the client.
+        """Initialize the client."""
+        # Store original model name for price lookups
+        self.base_model_name = model_name.split(':')[0]  # Remove :online suffix if present
 
-        Args:
-            model_name: The model to use (default: gpt-4o-mini)
-            base_url: The API base URL (default: OpenRouter)
-            api_key: Optional API key (defaults to OPENROUTER_API_KEY env var)
-            usage_db_path: Optional path to SQLite usage database
-        """
+        # Add online suffix if needed
+        if online and not model_name.endswith(':online'):
+            model_name = f"{model_name}:online"
+
         self.model_name = model_name
         self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
         if not self.api_key:
             raise ValueError("API key must be provided or set in OPENROUTER_API_KEY env var")
 
-        # Initialize components
         self.message_handler = MessageHandler()
-        self.prices = OpenRouterPrices()
-        self.usage_info = UsageInfo(usage_db_path) if usage_db_path else None
+        self.usage_info = UsageInfo(client_id, user_id)
+        self.price_manager = ModelPriceManager()
+        self.verbose = verbose
+        self.retries = retries
+        self.user_id = user_id
+        self.max_budget = max_budget
+        self.model_settings = model_settings
 
-        # Initialize OpenAI model with provider
+        # Force update prices if they haven't been fetched yet
+        if self.verbose:
+            logger.info("Checking model prices...")
+        self.price_manager.update_from_openrouter(force=True)
+
         self.model = OpenAIModel(
             model_name,
             provider=OpenAIProvider(
@@ -50,93 +78,198 @@ class PydanticAIClient:
             ),
         )
 
+        if self.verbose:
+            logger.info(f"Initialized PydanticAIClient with model: {model_name}")
+            if online:
+                logger.info("Online search capability enabled")
+            if max_budget:
+                logger.info(f"Maximum budget set to ${max_budget:.2f}")
+
     def clear_messages(self) -> None:
         """Clear all messages in the message handler."""
         self.message_handler.clear()
+        if self.verbose:
+            logger.info("Cleared all messages")
 
-    def add_message(
-        self,
-        content: Any,
-        role: str = "user",
-        tag: Optional[str] = None
-    ) -> None:
-        """Add a message to the conversation.
+    def _calculate_token_usage(self, result) -> Usage:
+        """Calculate token usage from result."""
+        usage = Usage()
+        if hasattr(result, 'usage'):
+            result_usage = result.usage()
+            usage.incr(result_usage)
+            if self.verbose:
+                logger.info(f"Usage - Request: {usage.request_tokens}, Response: {usage.response_tokens}, Total: {usage.total_tokens}")
+        return usage
 
-        Args:
-            content: The message content (can be str, dict, list, etc.)
-            role: The role of the message ("user", "assistant", or "system")
-            tag: Optional tag for block messages
-        """
-        if tag:
-            self.message_handler.add_message_block(tag, content)
-        elif role == "user":
-            self.message_handler.add_message_user(content)
-        elif role == "assistant":
-            self.message_handler.add_message_assistant(content)
-        elif role == "system":
-            self.message_handler.add_message_system(content)
-        else:
-            raise ValueError(f"Invalid role: {role}")
+    def _calculate_cost(self, usage: Usage) -> float:
+        """Calculate cost based on token usage."""
+        if not usage.total_tokens:
+            return 0.0
 
-    async def generate(
-        self,
-        result_type: type[BaseModel],
-        system_prompt: Optional[str] = None,
-        retries: int = 3
-    ) -> Any:
-        """Generate a response using the model.
+        # Use base model name for price lookup
+        model_price = self.price_manager.get_model_price(self.base_model_name)
+        if not model_price:
+            if self.verbose:
+                logger.warning(f"No price information found for model {self.base_model_name}")
+            return 0.0
 
-        Args:
-            result_type: The Pydantic model type for the response
-            system_prompt: Optional system prompt to use
-            retries: Number of retries on failure
+        # Get actual float values from the model price fields
+        input_cost = (usage.request_tokens or 0) * model_price.get_input_cost()
+        output_cost = (usage.response_tokens or 0) * model_price.get_output_cost()
+        total_cost = input_cost + output_cost
 
-        Returns:
-            The generated response as an instance of result_type
-        """
-        # Create agent with the specified result type
-        agent = Agent(
-            self.model,
-            result_type=result_type,
-            retries=retries,
-            system_prompt=system_prompt if system_prompt else ""
-        )
+        if self.verbose:
+            logger.info(f"Cost calculation - Input: ${input_cost:.4f}, Output: ${output_cost:.4f}, Total: ${total_cost:.4f}")
 
-        # Get formatted messages and combine them into a single prompt
-        messages = self.message_handler.get_messages(result_type)
-        prompt = "\n".join(str(msg.get("content", "")) for msg in messages)
+        return total_cost
 
-        # Generate response
-        result = await agent.run(prompt)
-
-        # Update usage if tracking enabled
-        if self.usage_info and hasattr(result, 'usage'):
-            model_info = self.prices.get_model_info(self.model_name)
-            if model_info:
-                # Get token counts from usage info
-                usage = result.usage
-                request_tokens = getattr(usage, 'request_tokens', 0) or 0
-                response_tokens = getattr(usage, 'response_tokens', 0) or 0
-
-                self.usage_info.add_usage(
-                    model=self.model_name,
-                    prompt_tokens=request_tokens,
-                    completion_tokens=response_tokens,
-                    prompt_price=model_info.input_price_per_token * request_tokens,
-                    completion_price=model_info.output_price_per_token * response_tokens
+    def _check_budget(self):
+        """Check if user has exceeded their budget."""
+        if self.max_budget is not None and self.user_id:
+            current_usage = self.usage_info.get_usage_stats()
+            if current_usage and current_usage.get('total_cost', 0) >= self.max_budget:
+                raise BudgetExceeded(
+                    f"User {self.user_id} has exceeded their budget limit of ${self.max_budget:.2f}"
                 )
 
-        return result.data
+    def _log_request(self, request_id: str):
+        """Log the request."""
+        if self.usage_info:
+            self.usage_info.log_request(
+                model_name=self.model_name,
+                raw_request=self.message_handler.format_raw_request(),
+                request_id=request_id
+            )
 
-    def get_model_info(self) -> Dict[str, Any]:
-        """Get information about the current model."""
-        model_info = self.prices.get_model_info(self.model_name)
-        if model_info:
-            return model_info.model_dump()
-        return {}
+    def _log_response(self, result: Any, usage: Usage, response_time: float, request_id: str):
+        """Log the response and update usage statistics."""
+        if not self.usage_info:
+            return
+
+        usage_dict = {
+            'prompt_tokens': usage.request_tokens or 0,
+            'completion_tokens': usage.response_tokens or 0,
+            'total_tokens': usage.total_tokens or 0,
+            'total_cost': self._calculate_cost(usage)
+        }
+
+        self.usage_info.log_response(
+            raw_response=str(result.data),
+            usage_info=usage_dict,
+            response_time=response_time,
+            request_id=request_id
+        )
+
+        # Check budget after response
+        if self.max_budget is not None and self.user_id:
+            current_usage = self.usage_info.get_usage_stats()
+            if current_usage and current_usage.get('total_cost', 0) > self.max_budget:
+                if self.verbose:
+                    logger.warning(f"User {self.user_id} has exceeded their budget limit of ${self.max_budget:.2f}")
+
+    async def _generate_async(
+        self,
+        result_type: type[BaseModel],
+        retries: Optional[int] = None,
+        model_settings: Optional[ModelSettings] = None,
+    ) -> Any:
+        """Async implementation of generate method."""
+        request_id = str(uuid.uuid4())
+        if self.verbose:
+            logger.info(f"Generating response for request {request_id}")
+
+        self._check_budget()
+        self._log_request(request_id)
+        start_time = time.perf_counter()
+
+        try:
+            agent = Agent(
+                self.model,
+                result_type=result_type,
+                retries=retries or self.retries,
+                system_prompt=self.message_handler.get_system_prompt()
+            )
+
+            result = await agent.run(
+                self.message_handler.get_user_prompt(),
+                model_settings=model_settings or self.model_settings
+            )
+
+            response_time = time.perf_counter() - start_time
+            if self.verbose:
+                logger.info(f"Response generated in {response_time:.3f} seconds")
+                logger.debug(f"Result data: {result.data}")
+
+            usage = self._calculate_token_usage(result)
+            self._log_response(result, usage, response_time, request_id)
+
+            return result.data
+
+        except Exception as e:
+            if self.verbose:
+                logger.error(f"Error generating response: {str(e)}")
+            if self.usage_info:
+                self.usage_info.log_error(
+                    error_message=str(e),
+                    response_time=time.perf_counter() - start_time,
+                    request_id=request_id
+                )
+            raise
+
+    def generate(
+        self,
+        result_type: type[BaseModel],
+        retries: Optional[int] = None,
+        model_settings: Optional[ModelSettings] = None,
+    ) -> Any:
+        """Synchronous version of generate method."""
+        try:
+            return asyncio.run(self._generate_async(result_type, retries, model_settings))
+        except KeyboardInterrupt:
+            if self.verbose:
+                logger.info("Generation interrupted by user")
+            raise
+        except Exception as e:
+            if self.verbose:
+                logger.error(f"Error in generate: {str(e)}")
+            raise
+
+    async def generate_async(
+        self,
+        result_type: type[BaseModel],
+        retries: Optional[int] = None,
+        model_settings: Optional[ModelSettings] = None,
+    ) -> Any:
+        """Asynchronous version of generate method."""
+        try:
+            return await self._generate_async(result_type, retries, model_settings)
+        except Exception as e:
+            if self.verbose:
+                logger.error(f"Error in generate_async: {str(e)}")
+            raise
 
     def get_usage_stats(self) -> Optional[Dict[str, Any]]:
         """Get usage statistics if tracking is enabled."""
         if not self.usage_info:
             return None
-        return self.usage_info.get_usage_stats()
+        stats = self.usage_info.get_usage_stats()
+        if self.verbose:
+            logger.info(f"Usage statistics: {stats}")
+        return stats
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.close()
+
+    def close(self):
+        """Close all resources."""
+        if hasattr(self, 'usage_info'):
+            self.usage_info.close()
+
+    def __del__(self):
+        """Cleanup when the client is destroyed."""
+        self.close()

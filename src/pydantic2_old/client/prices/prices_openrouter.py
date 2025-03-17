@@ -50,60 +50,6 @@ class OpenRouterResponse(BaseModel):
     data: List[OpenRouterModel] = Field(description="List of available models")
 
 
-class ModelInfo(BaseModel):
-    """Information about a model's pricing and capabilities."""
-    input_price_per_token: float = Field(description="Cost per input token in USD")
-    output_price_per_token: float = Field(description="Cost per output token in USD")
-    max_tokens: Optional[int] = Field(None, description="Maximum total tokens")
-    max_output_tokens: Optional[int] = Field(None, description="Maximum output tokens")
-
-
-class OpenRouterPrices:
-    """Class for managing OpenRouter model pricing information."""
-
-    def __init__(self):
-        """Initialize the OpenRouter prices manager."""
-        self.updater = OpenRouterModelUpdater()
-        self._models: Dict[str, ModelInfo] = {}
-        self._load_models()
-
-    def _load_models(self) -> None:
-        """Load model information from OpenRouter."""
-        models = self.updater.get_models()
-
-        for model in models:
-            if model.pricing:
-                # Convert string prices to float, removing the '$' prefix
-                input_price = float(model.pricing.prompt.lstrip('$'))
-                output_price = float(model.pricing.completion.lstrip('$'))
-
-                self._models[model.id] = ModelInfo(
-                    input_price_per_token=input_price,
-                    output_price_per_token=output_price,
-                    max_tokens=model.context_length,
-                    max_output_tokens=model.top_provider.max_completion_tokens if model.top_provider else None
-                )
-
-    def get_model_info(self, model_id: str) -> Optional[ModelInfo]:
-        """Get pricing information for a specific model.
-
-        Args:
-            model_id: The ID of the model (e.g., 'openai/gpt-4')
-
-        Returns:
-            ModelInfo object if found, None otherwise
-        """
-        return self._models.get(model_id)
-
-    def list_models(self) -> List[str]:
-        """Get a list of available model IDs.
-
-        Returns:
-            List of model IDs
-        """
-        return list(self._models.keys())
-
-
 class OpenRouterModelUpdater:
     """
     A class for fetching and saving OpenRouter model data to a JSON file.

@@ -1,9 +1,5 @@
-from typing import List, Any, Optional, Dict, Union
+from typing import Any
 import yaml
-import re
-import json
-from openai.types.chat import ChatCompletionMessageParam
-from ..utils.logger import logger
 
 
 class MessageFormatError(Exception):
@@ -16,27 +12,14 @@ class MessageHandler:
     ALLOWED_TYPES = (str, int, float, bool, dict, list)
 
     def __init__(self):
-        self.messages_user = []
-        self.messages_assistant = []
-        self.messages_system = []
-        self.messages_block = []
+        self.messages = []
 
     def clear(self) -> None:
         """Clear all messages."""
-        self.messages_user = []
-        self.messages_assistant = []
-        self.messages_system = []
-        self.messages_block = []
+        self.messages = []
 
     def _validate_message(self, message: Any) -> None:
-        """Validate if message type is supported.
-
-        Args:
-            message: Message to validate
-
-        Raises:
-            MessageFormatError: If message type is not supported
-        """
+        """Validate if message type is supported."""
         if not isinstance(message, self.ALLOWED_TYPES):
             type_name = type(message).__name__
             allowed_types = ', '.join(t.__name__ for t in self.ALLOWED_TYPES)
@@ -45,252 +28,64 @@ class MessageHandler:
                 f"Allowed types are: {allowed_types}"
             )
 
-        # For collections, validate each item
-        if isinstance(message, (list, dict)):
-            if isinstance(message, list):
-                items = message
-            else:
-                items = message.values()
-
-            for item in items:
-                if not isinstance(item, self.ALLOWED_TYPES):
-                    type_name = type(item).__name__
-                    raise MessageFormatError(
-                        f"Unsupported type in collection: {type_name}"
-                    )
-
-    def _format_data(self, data: Any, index: Optional[int] = None) -> str:
-        """Format data in a readable way using YAML.
-
-        Args:
-            data: Data to format (dict, list, or any other type)
-            index: Optional index for list items
-
-        Returns:
-            Formatted string representation of the data
-
-        Raises:
-            MessageFormatError: If data type is not supported
-        """
+    def _format_data(self, data: Any) -> str:
+        """Format data in a readable way using YAML."""
         self._validate_message(data)
 
         if isinstance(data, (dict, list)):
-            # Convert to YAML with custom style
             yaml_str = yaml.dump(
                 data,
-                default_flow_style=False,  # Use block style
-                allow_unicode=True,        # Support Unicode
-                sort_keys=False,           # Preserve key order
-                indent=2                   # 2-space indentation
+                default_flow_style=False,
+                allow_unicode=True,
+                sort_keys=False,
+                indent=2
             )
             return yaml_str.strip()
         else:
-            # For simple types
             return str(data)
 
-    def _add_message(
-        self,
-        message: Any,
-        target_list: List[str],
-        split_lists: bool = False
-    ) -> None:
-        """Internal method to add a message to a specific message list.
+    def add_message_system(self, content: str):
+        """Add a system message."""
+        self.messages.append({"role": "system", "content": content})
 
-        Args:
-            message: Any type of message to add
-            target_list: List where to add the message
-            split_lists: Whether to split lists into separate messages
+    def add_message_user(self, content: str):
+        """Add a user message."""
+        self.messages.append({"role": "user", "content": content})
 
-        Raises:
-            MessageFormatError: If message type is not supported
-        """
-        if not message:
-            return
+    def add_message_assistant(self, content: str):
+        """Add an assistant message."""
+        self.messages.append({"role": "assistant", "content": content})
 
-        self._validate_message(message)
+    def add_message_block(self, block_type: str, content: dict):
+        """Add a structured data block."""
+        formatted_content = f"{block_type}:\n" + "\n".join(f"{k}: {v}" for k, v in content.items())
+        self.messages.append({"role": "system", "content": formatted_content})
 
-        if split_lists and isinstance(message, list):
-            for item in message:
-                formatted_message = self._format_data(item)
-                target_list.append(formatted_message)
-        else:
-            formatted_message = self._format_data(message)
-            target_list.append(formatted_message)
+    def get_messages(self):
+        """Get all messages."""
+        return self.messages
 
-    def add_message_user(self, message: Any) -> None:
-        """Add a user message with intelligent formatting.
+    def get_system_prompt(self) -> str:
+        """Get combined system prompt."""
+        system_messages = [msg["content"] for msg in self.messages if msg["role"] == "system"]
+        return "\n".join(system_messages)
 
-        Args:
-            message: Any type of message that will be converted to a readable format
-        """
-        self._add_message(message, self.messages_user, split_lists=True)
+    def get_user_prompt(self) -> str:
+        """Get combined user and assistant messages."""
+        user_messages = [msg["content"] for msg in self.messages if msg["role"] in ("user", "assistant")]
+        return "\n".join(user_messages)
 
-    def add_message_assistant(self, message: Any) -> None:
-        """Add an assistant message with intelligent formatting.
-
-        Args:
-            message: Any type of message that will be converted to a readable format
-        """
-        self._add_message(message, self.messages_assistant, split_lists=True)
-
-    def add_message_system(self, message: Any) -> None:
-        """Add a system message with intelligent formatting.
-
-        Args:
-            message: Any type of message that will be converted to a readable format
-        """
-        self._add_message(message, self.messages_system, split_lists=True)
-
-    def add_message_block(self, tag: str, message: Any) -> None:
-        """Add a tagged message block with intelligent string conversion.
-        If message is a list, it will create separate numbered blocks for each item.
-
-        Args:
-            tag: The tag to wrap the message in (will be converted to uppercase)
-            message: Any type of message that will be converted to a readable format
-        """
-        tag = tag.upper()
-
-        # If message is a list, create separate blocks for each item
-        if isinstance(message, list):
-            for i, item in enumerate(message, 1):
-                msg = self._format_data(item)
-                self.messages_block.append(
-                    f"[{tag}_{i}]\n{msg}\n[/{tag}_{i}]"
-                )
-        else:
-            msg = self._format_data(message)
-            self.messages_block.append(f"[{tag}]\n{msg}\n[/{tag}]")
-
-    def _get_schema_str(self, answer_model: Any) -> str:
-        """Generate schema instructions for the model."""
-        schema = answer_model.model_json_schema()
-        # Remove metadata that might confuse the AI
-        schema.pop('title', None)
-        schema.pop('type', None)
-
-        response = f"""
-        Response:
-        - Return only ONE clean JSON object based on the schema.
-        - No code blocks, no extra text, just the JSON object.
-        - Make sure the JSON is valid and properly formatted.
-        - Do not return the schema itself, return only the JSON object based on
-          the schema.
-        [SCHEMA]
-        {json.dumps(schema)}
-        [/SCHEMA]
-
-        """
-        return self.trim_message(response)
-
-    def trim_message(self, message: str) -> str:
-        """Trim all types of whitespace from the message using regex.
-
-        Args:
-            message: Message to trim
-
-        Returns:
-            Message with trimmed whitespace
-        """
-        # Remove leading/trailing whitespace from each line
-        # and collapse multiple spaces into single space
-        lines = message.split('\n')
-        trimmed_lines = [
-            re.sub(r'\s+', ' ', line.strip())
-            for line in lines
-        ]
-        # Remove empty lines at start and end
-        while trimmed_lines and not trimmed_lines[0]:
-            trimmed_lines.pop(0)
-        while trimmed_lines and not trimmed_lines[-1]:
-            trimmed_lines.pop()
-        return '\n'.join(trimmed_lines)
-
-    def get_messages(self, answer_model: Any) -> List[ChatCompletionMessageParam]:
-        """Get all messages in the correct order with schema instructions.
-
-        Args:
-            answer_model: The Pydantic model to use for response validation
-
-        Returns:
-            List of message dictionaries in the format expected by LiteLLM
-        """
-        messages = [
-            {"role": "user", "content": self._get_schema_str(answer_model)}
-        ]
-
-        for message in self.messages_system:
-            messages.append(
-                {"role": "system", "content": self.trim_message(message)}
-            )
-
-        for message in self.messages_assistant:
-            messages.append(
-                {"role": "assistant", "content": self.trim_message(message)}
-            )
-
-        user_messages = [
-            *self.messages_user,
-            *self.messages_block,
-        ]
-        user_messages = [self.trim_message(message) for message in user_messages]
-        messages.append({"role": "user", "content": "\n".join(user_messages)})
-
-        logger.debug(f"Messages: {messages}")
-
-        # trim spaces from each line
-        return messages
-
-    def add_prompt(self, prompt: Union[str, List[Dict[str, str]]]) -> None:
-        """Add a prompt to the message handler.
-
-        Args:
-            prompt: Either a string prompt or a list of message dictionaries
-                   in the format {"role": "...", "content": "..."}
-        """
-        if isinstance(prompt, str):
-            # If prompt is a string, add it as a user message
-            self.add_message_user(prompt)
-        elif isinstance(prompt, list):
-            # If prompt is a list of message dictionaries
-            for message in prompt:
-                if not isinstance(message, dict):
-                    raise MessageFormatError("Each message must be a dictionary")
-
-                role = message.get("role", "").lower()
-                content = message.get("content", "")
-
-                if not role or not content:
-                    raise MessageFormatError("Message must have 'role' and 'content'")
-
-                if role == "user":
-                    self.add_message_user(content)
-                elif role == "assistant":
-                    self.add_message_assistant(content)
-                elif role == "system":
-                    self.add_message_system(content)
-                else:
-                    raise MessageFormatError(f"Unsupported role: {role}")
-        else:
-            raise MessageFormatError("Prompt must be a string or a list of messages")
+    def format_raw_request(self) -> str:
+        """Format the complete request for logging."""
+        system_prompt = self.get_system_prompt()
+        user_prompt = self.get_user_prompt()
+        return "\n".join(filter(None, [system_prompt, user_prompt]))
 
     def get_formatted_prompt(self) -> str:
-        """Get a formatted string representation of all messages.
-
-        Returns:
-            A string with all messages formatted for display
-        """
+        """Get a formatted string representation of all messages."""
         formatted = []
 
-        for msg in self.messages_system:
-            formatted.append(f"[SYSTEM]\n{msg}\n[/SYSTEM]")
-
-        for msg in self.messages_assistant:
-            formatted.append(f"[ASSISTANT]\n{msg}\n[/ASSISTANT]")
-
-        for msg in self.messages_user:
-            formatted.append(f"[USER]\n{msg}\n[/USER]")
-
-        formatted.extend(self.messages_block)
+        for message in self.messages:
+            formatted.append(f"{message['role']}:\n{message['content']}\n")
 
         return "\n\n".join(formatted)

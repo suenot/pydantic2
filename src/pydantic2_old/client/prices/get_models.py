@@ -3,7 +3,8 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-from src.pydantic2.client.prices.prices_openrouter import OpenRouterModelUpdater, OpenRouterModel
+from .prices_openrouter import OpenRouterModelUpdater, OpenRouterModel
+from .prices_litellm import LiteLLMModelUpdater, LiteLLMModelSpec
 
 
 class UniversalModelPricing(BaseModel):
@@ -27,7 +28,7 @@ class UniversalModel(BaseModel):
     id: str = Field(description="Unique model identifier")
     name: str = Field(description="Human-readable model name")
     provider: str = Field(
-        description="Model provider (openrouter, etc.)"
+        description="Model provider (openrouter, litellm, etc.)"
     )
     description: Optional[str] = Field(None, description="Model description")
     context_length: Optional[int] = Field(
@@ -73,12 +74,14 @@ class UniversalModelResponse(BaseModel):
 
 class UniversalModelGetter:
     """
-    A class for getting models from OpenRouter in a standardized format.
+    A class for getting models from multiple providers in a standardized format,
+    with OpenRouter as the priority provider.
     """
 
     def __init__(self):
-        """Initialize the model getter with OpenRouter updater."""
+        """Initialize the model getter with updaters for each provider."""
         self.openrouter_updater = OpenRouterModelUpdater()
+        self.litellm_updater = LiteLLMModelUpdater()
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
 
     def _convert_openrouter_model(self, model: OpenRouterModel) -> UniversalModel:
@@ -135,37 +138,92 @@ class UniversalModelGetter:
             raw_data=model.model_dump()
         )
 
+    def _convert_litellm_model(
+        self, model_id: str, model: LiteLLMModelSpec
+    ) -> UniversalModel:
+        """Convert a LiteLLM model to the universal format."""
+        pricing = None
+
+        # Check if we have valid pricing information
+        input_cost = model.input_cost_per_token
+        output_cost = model.output_cost_per_token
+
+        if input_cost is not None and output_cost is not None:
+            # Ensure we have float values for pricing
+            input_price = float(input_cost)
+            output_price = float(output_cost)
+
+            pricing = UniversalModelPricing(
+                input_price=input_price,
+                output_price=output_price,
+                image_price=None,
+                request_price=None
+            )
+
+        return UniversalModel(
+            id=model_id,
+            name=model_id,  # LiteLLM uses ID as name
+            provider=model.litellm_provider or "litellm",
+            description=None,
+            context_length=model.max_tokens,
+            max_output_tokens=model.max_output_tokens,
+            pricing=pricing,
+            supports_vision=model.supports_vision,
+            supports_function_calling=model.supports_function_calling,
+            raw_data=model.model_dump()
+        )
+
     def get_models(self, force_update: bool = False) -> UniversalModelResponse:
         """
-        Get models from OpenRouter in a standardized format.
+        Get models from all providers in a standardized format.
 
         Args:
             force_update: Whether to force an update of the model data.
 
         Returns:
-            A UniversalModelResponse containing models from OpenRouter.
+            A UniversalModelResponse containing models from all providers.
         """
-        # Get OpenRouter models
+        # Get OpenRouter models (priority provider)
         openrouter_path, openrouter_updated = self.openrouter_updater.update_models(
             force=force_update
         )
         openrouter_models = self.openrouter_updater.get_models()
 
+        # Get LiteLLM models
+        litellm_path, litellm_updated = self.litellm_updater.update_models(
+            force=force_update
+        )
+        litellm_models = self.litellm_updater.get_models()
+
         # Convert to universal format
-        universal_models = [
+        universal_openrouter = [
             self._convert_openrouter_model(model) for model in openrouter_models
         ]
 
-        # Create provider container
+        universal_litellm = [
+            self._convert_litellm_model(model_id, model)
+            for model_id, model in litellm_models.items()
+        ]
+
+        # Create provider containers
         openrouter_provider = ModelProvider(
             provider="openrouter",
-            models=universal_models,
-            updated_at=datetime.now()
+            models=universal_openrouter,
+            updated_at=datetime.now()  # Ideally we'd get this from the file
         )
 
+        litellm_provider = ModelProvider(
+            provider="litellm",
+            models=universal_litellm,
+            updated_at=datetime.now()  # Ideally we'd get this from the file
+        )
+
+        # Combine all models, with OpenRouter models first
+        all_models = universal_openrouter + universal_litellm
+
         return UniversalModelResponse(
-            providers=[openrouter_provider],
-            all_models=universal_models
+            providers=[openrouter_provider, litellm_provider],
+            all_models=all_models
         )
 
     def get_model_by_id(self, model_id: str) -> Optional[UniversalModel]:
@@ -194,11 +252,19 @@ class UniversalModelGetter:
                 _, model_name = base_id.split("/", 1)
 
                 # Try to find the model by its name in OpenRouter models
-                for model in models.providers[0].models:
+                for model in models.providers[0].models:  # OpenRouter is the first provider
                     if model.name == model_name or model.id == model_name:
                         return model
 
+            # Try to find by base ID in the specified provider's models
+            for provider_info in models.providers:
+                if provider_info.provider == provider:
+                    for model in provider_info.models:
+                        if model.id == base_id or model.name == base_id:
+                            return model
+
         # If still not found, try to find by the last part of the ID
+        # This is a fallback for cases like "openrouter/openai/gpt-4o-mini"
         base_name = model_id.split("/")[-1]
         for model in models.all_models:
             if model.id == base_name or model.name == base_name:
@@ -217,6 +283,7 @@ class UniversalModelGetter:
             List of models from the specified provider.
         """
         models = self.get_models()
+
         return [model for model in models.all_models if model.provider == provider]
 
     def get_models_with_capability(self, capability: str) -> List[UniversalModel]:

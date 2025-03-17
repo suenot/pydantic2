@@ -1,4 +1,3 @@
 .cache
 logs
 **/*.db
-db/
