@@ -3,7 +3,7 @@
     "private": true,
     "scripts": {
         "commit": "npx openrouter-commit -run",
-        "commit2": "git add . && git commit -m 'fixes' && git push",
+        "commit2": "git add . && git commit -m 'fixes' && git push origin pydantic2.1-beta",
         "build": "mkdocs build -f www/mkdocs.yml",
         "serve": "mkdocs serve -f www/mkdocs.yml"
     },

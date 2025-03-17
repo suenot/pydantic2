@@ -6,6 +6,7 @@ import tomli  # Better TOML reading
 import tomli_w  # Better TOML writing
 
 import questionary
+import semver
 
 
 class DeployManager:
@@ -318,30 +319,37 @@ class DeployManager:
         if not current_version:
             return False
 
-        version_type = questionary.select(
-            "Select version update type:",
-            choices=["patch", "minor", "major"],
-            style=self.style,
-        ).ask()
+        try:
+            # Parse current version
+            ver = semver.Version.parse(current_version)
 
-        if not version_type:
+            # Check if it's a beta version
+            if ver.prerelease and str(ver.prerelease).startswith('beta'):
+                prerelease = str(ver.prerelease)
+                # If it has a number after beta (beta.N), increment N
+                if '.' in prerelease:
+                    prefix, number = prerelease.split('.')
+                    if number.isdigit():
+                        new_prerelease = f"beta.{int(number) + 1}"
+                        ver = semver.Version(
+                            ver.major,
+                            ver.minor,
+                            ver.patch,
+                            prerelease=new_prerelease
+                        )
+                # If it's just 'beta', leave it as is
+            else:
+                # For stable versions, increment patch number
+                ver = ver.bump_patch()
+
+            new_version = str(ver)
+            self._update_version_in_files(new_version)
+            print(f"✅ Version updated: {current_version} → {new_version}")
+            return True
+
+        except ValueError as e:
+            print(f"❌ Error parsing version: {e}")
             return False
-
-        major, minor, patch = map(int, current_version.split("."))
-        if version_type == "patch":
-            patch += 1
-        elif version_type == "minor":
-            minor += 1
-            patch = 0
-        else:
-            major += 1
-            minor = 0
-            patch = 0
-
-        new_version = f"{major}.{minor}.{patch}"
-        self._update_version_in_files(new_version)
-        print(f"✅ Version updated: {current_version} → {new_version}")
-        return True
 
     def _get_current_version(self) -> Optional[str]:
         """Get current package version from pyproject.toml."""
