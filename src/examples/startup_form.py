@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 from pydantic import BaseModel, Field, ConfigDict
 from pydantic_ai import Agent
 from pydantic_ai.usage import Usage
@@ -10,10 +10,108 @@ from bs4 import BeautifulSoup
 import re
 import os
 from dotenv import load_dotenv
-import json
+import yaml
+from colorlog import ColoredFormatter
+import logging
+
+# Setup logging
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(ColoredFormatter(
+    "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s%(reset)s",
+    log_colors={
+        'DEBUG': 'cyan',
+        'INFO': 'green',
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'CRITICAL': 'bold_red',
+    },
+    reset=True,
+    style='%'
+))
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)  # Set once and keep at DEBUG level
 
 # load env variables
 load_dotenv()
+
+
+def to_flat_yaml(data: Any, section: str | None = None) -> str:
+    """Convert nested data to flat YAML format with optional section header"""
+    # First convert to YAML with proper indentation
+    yaml_str = yaml.dump(
+        data,
+        sort_keys=False,
+        default_flow_style=False,
+        allow_unicode=True,
+        indent=2,
+        width=200,
+        explicit_start=False,
+        explicit_end=False,
+        canonical=False,
+        default_style='',
+    )
+
+    # Add section markers if section is provided
+    if section:
+        section = section.upper()
+        return f"[{section}]:\n{yaml_str}\n[/{section}]"
+
+    return yaml_str
+
+
+def clean_text(text: str) -> str:
+    """Clean text from special characters and HTML tags"""
+    # Remove HTML tags
+    soup = BeautifulSoup(text, "html.parser")
+    text = soup.get_text()
+    # Remove special characters but keep basic punctuation
+    text = re.sub(r'[^\w\s.,!?-]', '', text)
+    # Normalize whitespace
+    return ' '.join(text.split()).strip()
+
+
+def clean_prompt(prompt: str) -> str:
+    """Clean prompt text by removing extra whitespace and empty lines, but preserve sections"""
+    def clean_part(text: str) -> str:
+        """Clean non-section text by removing extra whitespace and empty lines"""
+        return '\n'.join(line.strip() for line in text.split('\n') if line.strip())
+
+    # Find and preserve sections, clean everything else
+    pattern = r'(\[.*?\]:.*?\[/.*?\])'
+    parts = re.split(pattern, prompt, flags=re.DOTALL)
+
+    cleaned_parts = []
+    for part in parts:
+        if part.strip():
+            if re.match(r'\[.*?\]:.*\[/.*?\]', part, re.DOTALL):
+                cleaned_parts.append(part)  # Keep section unchanged
+            else:
+                cleaned_parts.append(clean_part(part))  # Clean non-section text
+
+    return '\n'.join(cleaned_parts).strip()
+
+
+def format_long_text(text: str, width: int = 80) -> str:
+    """Format long text with proper wrapping"""
+    words = text.split()
+    lines = []
+    current_line = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) + 1 <= width:
+            current_line.append(word)
+            current_length += len(word) + 1
+        else:
+            lines.append(' '.join(current_line))
+            current_line = [word]
+            current_length = len(word)
+
+    if current_line:
+        lines.append(' '.join(current_line))
+
+    return '\n  '.join(lines)
 
 
 class StartupForm(BaseModel):
@@ -37,15 +135,46 @@ class FormState(BaseModel):
     feedback: str = Field(default="", description="Feedback on the last answer")
 
     def print_state(self):
-        """Print current state of the form"""
-        print("\n=== FORM STATE ===")
-        print(f"Progress: {self.progress}%")
-        print("\nForm Data:")
-        print(self.form.model_dump_json(indent=2))
+        """Print current state of the form with improved formatting"""
+        print("\n" + "=" * 80)
+        print("📊 FORM STATE")
+        print("=" * 80)
+
+        # Progress bar with percentage
+        filled = "█" * (self.progress // 2)
+        empty = "░" * (50 - self.progress // 2)
+        print(f"\n📈 Progress: {self.progress}%")
+        print(f"|{filled}{empty}|")
+
+        # Form data with improved formatting
+        print("\n📝 Form Data:")
+        print("-" * 80)
+
+        form_data = self.form.model_dump()
+        for field, value in form_data.items():
+            if isinstance(value, str) and value:
+                print(f"\n{field.title()}:")
+                print(f"  {format_long_text(value)}")
+            elif isinstance(value, list) and value:
+                print(f"\n{field.title()}:")
+                for item in value:
+                    print(f"  • {item}")
+            elif value:  # For any other non-empty values
+                print(f"\n{field.title()}: {value}")
+
+        # Feedback with improved formatting
         if self.feedback:
-            print("\nFeedback:", self.feedback)
-        print("\nLast Question:", self.last_question)
-        print("=" * 50)
+            print("\n💭 Feedback:")
+            print("-" * 80)
+            print(format_long_text(self.feedback))
+
+        # Last question with improved formatting
+        if self.last_question:
+            print("\n❓ Next Question:")
+            print("-" * 80)
+            print(format_long_text(self.last_question))
+
+        print("=" * 80)
 
 
 class FormProcessorResponse(BaseModel):
@@ -90,19 +219,27 @@ analyzer_model = OpenAIModel(
 form_processor = Agent(
     form_processor_model,
     result_type=FormProcessorResponse,
-    retries=3,  # Increase retries to handle validation errors
+    retries=3,
     system_prompt="""
-    You are a startup form assistant. Your task is to:
-    1. Look at the 'current form' data and user's answer
-    2. Update and improve ANY fields in the form based on the information provided
-    3. Calculate progress based on field completion and quality:
-       - Progress should never decrease from previous state
-       - All fields need specific metrics for 100% completion
-       - Increase progress based on the quality of the 'updated form'
-    4. Provide feedback and an example of a better answer
-    5. If available messages are provided, select the most appropriate next message
-       that would best fill in missing information or enhance existing details
-    6. Determine the next best question to ask
+    You are a form processing assistant that helps structure and validate user information.
+
+    For each message, you MUST:
+    1. Analyze the current form state and user's answer carefully
+    2. Extract relevant information from the user's answer and update appropriate form fields
+    3. Calculate progress based on field completion:
+       - Each non-empty field contributes equally to the total progress
+       - Consider both completeness and quality of information
+       - Progress should never decrease
+    4. Provide clear feedback about what information is still missing or needs improvement
+    5. Generate relevant follow-up questions to gather missing or unclear information
+    6. Set progress to 100% only when all fields contain complete, high-quality information
+
+    Your response MUST be a valid FormProcessorResponse with:
+    - updated_form: Form with all updated fields
+    - progress: integer 0-100
+    - feedback: string with specific feedback
+    - example: string with example of good answer
+    - next_question: string with next question to ask
     """
 )
 
@@ -110,75 +247,111 @@ form_processor = Agent(
 analyzer = Agent(
     analyzer_model,
     result_type=StartupAnalysis,
-    retries=3,  # Increase retries for analyzer as well
+    retries=3,
     system_prompt="""
-    You are an expert startup analyst.
-    Analyze the startup information and provide structured feedback
-    including strengths, risks, and actionable recommendations.
-    Focus on market fit, scalability, and competitive advantages.
+    You are an expert startup analyst with deep experience in evaluating early-stage companies.
+
+    When analyzing a startup, focus on:
+    1. Market Opportunity
+       - Market size and growth potential
+       - Problem significance and urgency
+       - Target audience validation
+
+    2. Product & Technology
+       - Solution uniqueness
+       - Technical feasibility
+       - Competitive advantages
+
+    3. Business Model
+       - Revenue streams clarity
+       - Pricing strategy
+       - Customer acquisition costs
+       - Scalability potential
+
+    4. Execution & Traction
+       - Development stage
+       - Current metrics
+       - Team capabilities
+
+    Provide structured feedback including:
+    - Concise summary of the business
+    - Key strengths that could lead to success
+    - Critical risks that need attention
+    - Actionable recommendations for growth
+
+    Be specific and practical in your analysis.
     """
 )
 
 
-def clean_text(text: str) -> str:
-    """Clean text from special characters and HTML tags"""
-    # Remove HTML tags
-    soup = BeautifulSoup(text, "html.parser")
-    text = soup.get_text()
-    # Remove special characters but keep basic punctuation
-    text = re.sub(r'[^\w\s.,!?-]', '', text)
-    # Normalize whitespace
-    return ' '.join(text.split())
-
-
-# Create the main form agent with text cleaning in the system prompt
+# Create the main form agent
 form_agent = Agent(
     form_processor_model,
     deps_type=FormState,
     result_type=FormProcessorResponse,
     retries=3,
     system_prompt="""
-    You are a startup consultant gathering information about startups.
+    You are a form processing assistant that helps gather and structure information.
     Your task is to:
-    1. Process the user's message and extract relevant information
-    2. Update the form with new information
-    3. If you have enough information (all fields have specific metrics),
-       use the analyze_startup tool to perform final analysis
-    4. Otherwise, provide feedback and determine the next question
+    1. Process incoming messages and extract relevant information
+    2. Update form fields based on the extracted information
+    3. Track progress and provide feedback
+    4. Generate appropriate follow-up questions
+    5. When all fields are complete with high-quality information,
+       trigger final analysis
     """
 )
 
 
 @form_agent.tool
-async def process_message(ctx: RunContext[FormState], message: str, available_messages: List[str] = None) -> FormProcessorResponse:
+async def process_message(ctx: RunContext[FormState], message: str) -> FormProcessorResponse:
     """Process user message and update form"""
-    # Clean the input text
+    # Clean and prepare the message
     cleaned_message = clean_text(message)
 
-    # Process message with form processor
-    result = await form_processor.run(
-        f"""
-        Current form state:
-        {ctx.deps.form.model_dump_json(indent=2)}
+    # Prepare form data with proper sections
+    form_data = {
+        'form': ctx.deps.form.model_dump(),
+        'progress': ctx.deps.progress,
+        'last_question': ctx.deps.last_question
+    }
 
-        Previous question: {ctx.deps.last_question}
-        User answer: {cleaned_message}
+    # Convert to YAML with sections
+    form_state = to_flat_yaml(form_data, section="Form State")
+    user_message = to_flat_yaml(cleaned_message, section="User Message")
 
-        Available messages for next selection:
-        {json.dumps(available_messages, indent=2) if available_messages else "No more messages available"}
+    # Create and clean prompt
+    user_prompt = clean_prompt(f"""
+    {form_state}
 
-        Please update the form with any new information from the user's answer.
-        If available messages are provided, select the most appropriate next message.
-        Remember to provide feedback and an example of a better answer.
-        If all fields have specific metrics, use the analyze_startup tool.
-        """
-    )
+    {user_message}
+
+    Instructions:
+    1. Extract relevant information from the message and update appropriate fields
+    2. Ensure business model focuses on revenue generation, not technical details
+    3. Move technical/development information to the stage field
+    4. Calculate progress based on field completion and quality
+    5. Progress should never decrease
+    6. Provide specific feedback on what information is still needed
+    7. Generate a focused follow-up question
+    """)
+
+    logger.debug("Generated prompt structure:")
+    logger.debug(user_prompt)
+
+    # Process message
+    result = await form_processor.run(user_prompt)
+
+    # Ensure progress never decreases
+    new_progress = max(ctx.deps.progress, result.data.progress)
 
     # Update form state
     ctx.deps.form = result.data.updated_form
-    ctx.deps.progress = result.data.progress
+    ctx.deps.progress = new_progress
     ctx.deps.last_question = result.data.next_question
     ctx.deps.feedback = result.data.feedback
+
+    logger.debug(f"Progress updated to: {ctx.deps.progress}%")
 
     return result.data
 
@@ -186,14 +359,21 @@ async def process_message(ctx: RunContext[FormState], message: str, available_me
 @form_agent.tool
 async def analyze_startup(ctx: RunContext[FormState]) -> StartupAnalysis:
     """Analyze the complete startup information"""
+    # Prepare startup data
+    startup_info = to_flat_yaml(ctx.deps.form.model_dump(), section="Startup Information")
 
-    # Convert current data to StartupForm
-    form_data = ctx.deps.form.model_dump()
+    # Create and clean prompt
+    user_prompt = clean_prompt(f"""
+    Please analyze this startup:
+
+    {startup_info}
+    """)
+
+    logger.debug("Generated analysis prompt:")
+    logger.debug(user_prompt)
 
     # Get analysis from analyzer agent
-    result = await analyzer.run(
-        f"Please analyze this startup:\n{form_data}"
-    )
+    result = await analyzer.run(user_prompt)
 
     return result.data
 
@@ -313,17 +493,31 @@ async def main():
             deps=form_state
         ))
 
-        print("\n📋 Final Analysis:")
-        print(f"└─ {final_result.summary}")
-        print("\n💪 Strengths:")
+        # Print final analysis with improved formatting
+        print("\n" + "=" * 50)
+        print("📋 STARTUP ANALYSIS")
+        print("=" * 50)
+
+        print("\n📌 Summary:")
+        print("-" * 50)
+        print(final_result.summary)
+
+        print("\n💪 Key Strengths:")
+        print("-" * 50)
         for strength in final_result.strengths:
-            print(f"└─ {strength}")
-        print("\n⚠️ Risks:")
+            print(f"• {strength}")
+
+        print("\n⚠️ Critical Risks:")
+        print("-" * 50)
         for risk in final_result.risks:
-            print(f"└─ {risk}")
-        print("\n🎯 Recommendations:")
+            print(f"• {risk}")
+
+        print("\n🎯 Action Items:")
+        print("-" * 50)
         for rec in final_result.recommendations:
-            print(f"└─ {rec}")
+            print(f"• {rec}")
+
+        print("=" * 50)
 
 
 if __name__ == "__main__":
