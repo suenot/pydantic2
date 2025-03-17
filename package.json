@@ -1,11 +1,11 @@
 {
-    "name": "@root/default",
+    "name": "default",
     "private": true,
     "scripts": {
         "commit": "npx openrouter-commit -run",
         "commit2": "git add . && git commit -m 'fixes' && git push",
-        "build": "mkdocs build",
-        "serve": "mkdocs serve"
+        "build": "mkdocs build -f www/mkdocs.yml",
+        "serve": "mkdocs serve -f www/mkdocs.yml"
     },
     "devDependencies": {
         "openrouter-commit": "latest"

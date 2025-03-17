@@ -1,3 +1,6 @@
+# ========================
+# Python Ignore Rules
+# ========================
 
 # Byte-compiled / optimized / compiled files
 __pycache__/
@@ -7,7 +10,22 @@ __pycache__/
 # C extensions
 *.so
 
-# Distribution / packaging
+# Virtual Environments
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+.conda/
+.venv.bak/
+.venv_dev/
+
+# Pyenv
+.python-version
+
+# ========================
+# Packaging and Distribution
+# ========================
 .Python
 build/
 develop-eggs/
@@ -19,24 +37,36 @@ lib/
 lib64/
 parts/
 sdist/
-dist_test/
 var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+test-pypi-release/
+pypi-release/
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
-# Installer logs
+# Distutils
+/MANIFEST  # Ignore auto-generated MANIFEST, but keep MANIFEST.in
+
+# Wheel files
+*.whl
+
+# ========================
+# Logs, Debug, and Installer Files
+# ========================
+*.log
+logs/
+debug.log
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# ========================
+# Testing & Coverage
+# ========================
 htmlcov/
 .tox/
 .nox/
@@ -48,83 +78,92 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+.pytest_cache/
 
-# Translations
-*.mo
-*.pot
+# ========================
+# Secret & Configuration Files
+# ========================
+.env
+.env.*
 
-# Django stuff:
+# ========================
+# macOS & System Files
+# ========================
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# ========================
+# Editor & IDE Files
+# ========================
+.idea/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/shelf/
+.idea/**/modules.xml
+.idea/**/misc.xml
+.idea/**/inspectionProfiles/
+.idea/**/deployment.xml
+*.iml
+*.ipr
+*.iws
+# .vscode/
+# .vscode/settings.json
+
+# ========================
+# Jupyter & IPython
+# ========================
+.ipynb_checkpoints/
+.ipython/
+profile_default/
+ipython_config.py
+
+# ========================
+# Django, Flask, Scrapy
+# ========================
+# Django
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+media/
+staticfiles/
+celerybeat-schedule
 
-# Flask stuff:
+# Flask
 instance/
 .webassets-cache
 
-# Scrapy stuff:
+# Scrapy
 .scrapy
 
-# Sphinx documentation
+# ========================
+# Documentation & Build Tools
+# ========================
 docs/_build/
+target/  # PyBuilder
 
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# PyCharm
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# VSCode
-# .vscode/
-
-# macOS
-.DS_Store
-
-# mypy
-.mypy_cache/
-
-# Bandit
+# ========================
+# Security & Code Analysis
+# ========================
 .bandit/
 
-# Pytest
-.pytest_cache/
-
-# Env files
-.env
-.env.*
-.vscode/settings.json
-
-# Pyenv
-.python-version
-
-# Test PyPI and PyPI builds
-test-pypi-release/
-pypi-release/
-
-# Distutils
-MANIFEST
-
-# Wheel files
-*.whl
-
-# Node
+# ========================
+# Node.js (if applicable)
+# ========================
 node_modules/
+.npm/
 yarn.lock
 package-lock.json
+.pnpm-debug.log
 
-# Logs
-*.log
 
-/venv
-
+# ========================
+# Pypi
+# ========================
+setup.cfg
+setup.py
+MANIFEST.in
+security_reports/
+.safety-project.ini

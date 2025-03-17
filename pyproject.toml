@@ -1,18 +1,154 @@
 [build-system]
-requires = ["setuptools", "wheel", "pytest"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.6.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "pydantic2"
+version = "2.1.0-beta.1"
+description = "A powerful AI framework with structured Pydantic responses, flexible LLM integration, and advanced agent capabilities"
+authors = ["Unrealos <info@unrealos.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://pydantic.unrealos.com/"
+repository = "https://github.com/markolofsen/pydantic2"
+documentation = "https://pydantic.unrealos.com/"
+keywords = ["pydantic", "AI", "LLM", "agents", "machine learning", "nlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+# Files to include/exclude in the package
+include = [
+    "LICENSE",
+    "README.md",
+    "pyproject.toml",
+]
+
+exclude = [
+    # Development and test files
+    "tests/*",
+    "examples/*",
+    "requirements.txt",
+    "menu.py",
+    "vercel.json",
+    "security_reports/*",
+    ".safety-project.ini",
+
+    # Documentation and assets
+    "www/*",
+    "assets/*",
+
+    # IDE and editor files
+    ".idea/*",
+    ".vscode/*",
+    ".github/*",
+    ".gitignore",
+
+    # Cache and build artifacts
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    ".pytest_cache",
+    ".coverage",
+    "htmlcov",
+    ".tox",
+    ".env",
+    "venv",
+    ".venv",
+
+    # Temporary files
+    "*.swp",
+    "*.swo",
+    "*~",
+    ".DS_Store",
+
+    # Distribution files
+    "dist/*",
+    "build/*",
+    "*.egg-info",
+]
 
 [tool.black]
 line-length = 88
-target-version = ["py37", "py38", "py39", "py310"]
+target-version = ["py38", "py39", "py310", "py311"]
 
 [tool.isort]
 profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
 
-[tool.flake8]
-max-line-length = 88
-exclude = ".git,__pycache__,dist,build,.venv"
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+
+[tool.pip-audit]
+requirement = "poetry.lock"
+ignore-vulns = []
+local = true
+format = "json"
+output = "security_reports/pip_audit.json"
+
+[tool.poetry.urls]
+Source = "https://github.com/markolofsen/pydantic2"
+Tracker = "https://github.com/markolofsen/pydantic2/issues"
+Documentation = "https://pydantic.unrealos.com/"
+Homepage = "https://pydantic.unrealos.com/"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+litellm = "^1.63.6"
+pydantic = "^2.9.2"
+diskcache = "^5.6.3"
+colorlog = "^6.7.0"
+drf-pydantic = "^2.5.1"
+typing-extensions = "^4.10.0"
+pyyaml = "^6.0.1"
+peewee = "^3.17.0"
+instructor = "^1.1.0"
+beautifulsoup4 = "^4.12.0"
+
+[tool.poetry.extras]
+all = ["drf-pydantic", "instructor", "beautifulsoup4"]
+api = ["drf-pydantic"]
+parsing = ["beautifulsoup4"]
+ai = ["instructor"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
+testpaths = [ "tests",]
+python_files = [ "test_*.py",]
+addopts = "-v --disable-warnings"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+black = "^24.2.0"
+isort = "^5.13.0"
+ruff = "^0.3.2"
+mypy = "^1.8.0"
+build = "^1.2.0"
+twine = "^4.0.0"
+pip-audit = "^2.6.0"
+tomli = "^2.0.1"
+tomli-w = "^1.0.0"
+safety = "^3.3.1"

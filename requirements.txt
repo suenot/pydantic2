@@ -6,20 +6,24 @@ pytest-cov
 flake8
 black
 isort
+pip-audit
+safety
+tomli
+tomli-w
 questionary
+semver
 
 # Runtime dependencies
-litellm
 pydantic
+pydantic-ai
 diskcache
-smolagents
-smolagents[gradio]
 colorlog
 drf-pydantic
 pyyaml
 peewee
 instructor
 beautifulsoup4
+python-dotenv
 
 # Documentation
 mkdocs

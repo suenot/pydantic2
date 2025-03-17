@@ -1,5 +1,5 @@
 {
-  "updated_at": "2025-03-16T16:14:30.708519",
+  "updated_at": "2025-03-17T18:37:14.037492",
   "response": {
     "data": [
       {
@@ -3139,6 +3139,62 @@
         "per_request_limits": null
       },
       {
+        "id": "neversleep/llama-3.1-lumimaid-70b",
+        "name": "NeverSleep: Lumimaid v0.2 70B",
+        "created": 1729555200,
+        "description": "Lumimaid v0.2 70B is a finetune of [Llama 3.1 70B](/meta-llama/llama-3.1-70b-instruct) with a \"HUGE step up dataset wise\" compared to Lumimaid v0.1. Sloppy chats output were purged.\n\nUsage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
+        "context_length": 16384,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Llama3",
+          "instruct_type": "llama3"
+        },
+        "pricing": {
+          "prompt": "0.000003375",
+          "completion": "0.0000045",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 16384,
+          "max_completion_tokens": 2048,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "anthracite-org/magnum-v4-72b",
+        "name": "Magnum v4 72B",
+        "created": 1729555200,
+        "description": "This is a series of models designed to replicate the prose quality of the Claude 3 models, specifically Sonnet(https://openrouter.ai/anthropic/claude-3.5-sonnet) and Opus(https://openrouter.ai/anthropic/claude-3-opus).\n\nThe model is fine-tuned on top of [Qwen2.5 72B](https://openrouter.ai/qwen/qwen-2.5-72b-instruct).",
+        "context_length": 16384,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Qwen",
+          "instruct_type": "chatml"
+        },
+        "pricing": {
+          "prompt": "0.000001875",
+          "completion": "0.00000225",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 16384,
+          "max_completion_tokens": 1024,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
         "id": "anthropic/claude-3.5-sonnet:beta",
         "name": "Anthropic: Claude 3.5 Sonnet (self-moderated)",
         "created": 1729555200,
@@ -3195,62 +3251,6 @@
         "per_request_limits": null
       },
       {
-        "id": "anthracite-org/magnum-v4-72b",
-        "name": "Magnum v4 72B",
-        "created": 1729555200,
-        "description": "This is a series of models designed to replicate the prose quality of the Claude 3 models, specifically Sonnet(https://openrouter.ai/anthropic/claude-3.5-sonnet) and Opus(https://openrouter.ai/anthropic/claude-3-opus).\n\nThe model is fine-tuned on top of [Qwen2.5 72B](https://openrouter.ai/qwen/qwen-2.5-72b-instruct).",
-        "context_length": 16384,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Qwen",
-          "instruct_type": "chatml"
-        },
-        "pricing": {
-          "prompt": "0.000001875",
-          "completion": "0.00000225",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 16384,
-          "max_completion_tokens": 1024,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "neversleep/llama-3.1-lumimaid-70b",
-        "name": "NeverSleep: Lumimaid v0.2 70B",
-        "created": 1729555200,
-        "description": "Lumimaid v0.2 70B is a finetune of [Llama 3.1 70B](/meta-llama/llama-3.1-70b-instruct) with a \"HUGE step up dataset wise\" compared to Lumimaid v0.1. Sloppy chats output were purged.\n\nUsage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
-        "context_length": 16384,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Llama3",
-          "instruct_type": "llama3"
-        },
-        "pricing": {
-          "prompt": "0.000003375",
-          "completion": "0.0000045",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 16384,
-          "max_completion_tokens": 2048,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "x-ai/grok-beta",
         "name": "xAI: Grok Beta",
         "created": 1729382400,
@@ -3279,10 +3279,10 @@
         "per_request_limits": null
       },
       {
-        "id": "mistralai/ministral-3b",
-        "name": "Mistral: Ministral 3B",
+        "id": "mistralai/ministral-8b",
+        "name": "Mistral: Ministral 8B",
         "created": 1729123200,
-        "description": "Ministral 3B is a 3B parameter model optimized for on-device and edge computing. It excels in knowledge, commonsense reasoning, and function-calling, outperforming larger models like Mistral 7B on most benchmarks. Supporting up to 128k context length, it’s ideal for orchestrating agentic workflows and specialist tasks with efficient inference.",
+        "description": "Ministral 8B is an 8B parameter model featuring a unique interleaved sliding-window attention pattern for faster, memory-efficient inference. Designed for edge use cases, it supports up to 128k context length and excels in knowledge and reasoning tasks. It outperforms peers in the sub-10B category, making it perfect for low-latency, privacy-first applications.",
         "context_length": 128000,
         "architecture": {
           "modality": "text->text",
@@ -3290,8 +3290,8 @@
           "instruct_type": null
         },
         "pricing": {
-          "prompt": "0.00000004",
-          "completion": "0.00000004",
+          "prompt": "0.0000001",
+          "completion": "0.0000001",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -3307,10 +3307,10 @@
         "per_request_limits": null
       },
       {
-        "id": "mistralai/ministral-8b",
-        "name": "Mistral: Ministral 8B",
+        "id": "mistralai/ministral-3b",
+        "name": "Mistral: Ministral 3B",
         "created": 1729123200,
-        "description": "Ministral 8B is an 8B parameter model featuring a unique interleaved sliding-window attention pattern for faster, memory-efficient inference. Designed for edge use cases, it supports up to 128k context length and excels in knowledge and reasoning tasks. It outperforms peers in the sub-10B category, making it perfect for low-latency, privacy-first applications.",
+        "description": "Ministral 3B is a 3B parameter model optimized for on-device and edge computing. It excels in knowledge, commonsense reasoning, and function-calling, outperforming larger models like Mistral 7B on most benchmarks. Supporting up to 128k context length, it’s ideal for orchestrating agentic workflows and specialist tasks with efficient inference.",
         "context_length": 128000,
         "architecture": {
           "modality": "text->text",
@@ -3318,8 +3318,8 @@
           "instruct_type": null
         },
         "pricing": {
-          "prompt": "0.0000001",
-          "completion": "0.0000001",
+          "prompt": "0.00000004",
+          "completion": "0.00000004",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -3419,10 +3419,10 @@
         "per_request_limits": null
       },
       {
-        "id": "inflection/inflection-3-productivity",
-        "name": "Inflection: Inflection 3 Productivity",
+        "id": "inflection/inflection-3-pi",
+        "name": "Inflection: Inflection 3 Pi",
         "created": 1728604800,
-        "description": "Inflection 3 Productivity is optimized for following instructions. It is better for tasks requiring JSON output or precise adherence to provided guidelines. It has access to recent news.\n\nFor emotional intelligence similar to Pi, see [Inflect 3 Pi](/inflection/inflection-3-pi)\n\nSee [Inflection's announcement](https://inflection.ai/blog/enterprise) for more details.",
+        "description": "Inflection 3 Pi powers Inflection's [Pi](https://pi.ai) chatbot, including backstory, emotional intelligence, productivity, and safety. It has access to recent news, and excels in scenarios like customer support and roleplay.\n\nPi has been trained to mirror your tone and style, if you use more emojis, so will Pi! Try experimenting with various prompts and conversation styles.",
         "context_length": 8000,
         "architecture": {
           "modality": "text->text",
@@ -3447,10 +3447,10 @@
         "per_request_limits": null
       },
       {
-        "id": "inflection/inflection-3-pi",
-        "name": "Inflection: Inflection 3 Pi",
+        "id": "inflection/inflection-3-productivity",
+        "name": "Inflection: Inflection 3 Productivity",
         "created": 1728604800,
-        "description": "Inflection 3 Pi powers Inflection's [Pi](https://pi.ai) chatbot, including backstory, emotional intelligence, productivity, and safety. It has access to recent news, and excels in scenarios like customer support and roleplay.\n\nPi has been trained to mirror your tone and style, if you use more emojis, so will Pi! Try experimenting with various prompts and conversation styles.",
+        "description": "Inflection 3 Productivity is optimized for following instructions. It is better for tasks requiring JSON output or precise adherence to provided guidelines. It has access to recent news.\n\nFor emotional intelligence similar to Pi, see [Inflect 3 Pi](/inflection/inflection-3-pi)\n\nSee [Inflection's announcement](https://inflection.ai/blog/enterprise) for more details.",
         "context_length": 8000,
         "architecture": {
           "modality": "text->text",
@@ -3503,10 +3503,10 @@
         "per_request_limits": null
       },
       {
-        "id": "thedrummer/rocinante-12b",
-        "name": "Rocinante 12B",
+        "id": "anthracite-org/magnum-v2-72b",
+        "name": "Magnum v2 72B",
         "created": 1727654400,
-        "description": "Rocinante 12B is designed for engaging storytelling and rich prose.\n\nEarly testers have reported:\n- Expanded vocabulary with unique and expressive word choices\n- Enhanced creativity for vivid narratives\n- Adventure-filled and captivating stories",
+        "description": "From the maker of [Goliath](https://openrouter.ai/models/alpindale/goliath-120b), Magnum 72B is the seventh in a family of models designed to achieve the prose quality of the Claude 3 models, notably Opus & Sonnet.\n\nThe model is based on [Qwen2 72B](https://openrouter.ai/models/qwen/qwen-2-72b-instruct) and trained with 55 million tokens of highly curated roleplay (RP) data.",
         "context_length": 32768,
         "architecture": {
           "modality": "text->text",
@@ -3514,8 +3514,8 @@
           "instruct_type": "chatml"
         },
         "pricing": {
-          "prompt": "0.00000025",
-          "completion": "0.0000005",
+          "prompt": "0.000003",
+          "completion": "0.000003",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -3559,10 +3559,10 @@
         "per_request_limits": null
       },
       {
-        "id": "anthracite-org/magnum-v2-72b",
-        "name": "Magnum v2 72B",
+        "id": "thedrummer/rocinante-12b",
+        "name": "Rocinante 12B",
         "created": 1727654400,
-        "description": "From the maker of [Goliath](https://openrouter.ai/models/alpindale/goliath-120b), Magnum 72B is the seventh in a family of models designed to achieve the prose quality of the Claude 3 models, notably Opus & Sonnet.\n\nThe model is based on [Qwen2 72B](https://openrouter.ai/models/qwen/qwen-2-72b-instruct) and trained with 55 million tokens of highly curated roleplay (RP) data.",
+        "description": "Rocinante 12B is designed for engaging storytelling and rich prose.\n\nEarly testers have reported:\n- Expanded vocabulary with unique and expressive word choices\n- Enhanced creativity for vivid narratives\n- Adventure-filled and captivating stories",
         "context_length": 32768,
         "architecture": {
           "modality": "text->text",
@@ -3570,8 +3570,8 @@
           "instruct_type": "chatml"
         },
         "pricing": {
-          "prompt": "0.000003",
-          "completion": "0.000003",
+          "prompt": "0.00000025",
+          "completion": "0.0000005",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -3643,34 +3643,6 @@
         "per_request_limits": null
       },
       {
-        "id": "meta-llama/llama-3.2-90b-vision-instruct",
-        "name": "Meta: Llama 3.2 90B Vision Instruct",
-        "created": 1727222400,
-        "description": "The Llama 90B Vision model is a top-tier, 90-billion-parameter multimodal model designed for the most challenging visual reasoning and language tasks. It offers unparalleled accuracy in image captioning, visual question answering, and advanced image-text comprehension. Pre-trained on vast multimodal datasets and fine-tuned with human feedback, the Llama 90B Vision is engineered to handle the most demanding image-based AI tasks.\n\nThis model is perfect for industries requiring cutting-edge multimodal AI capabilities, particularly those dealing with complex, real-time visual and textual analysis.\n\nClick here for the [original model card](https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md).\n\nUsage of this model is subject to [Meta's Acceptable Use Policy](https://www.llama.com/llama3/use-policy/).",
-        "context_length": 4096,
-        "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "Llama3",
-          "instruct_type": "llama3"
-        },
-        "pricing": {
-          "prompt": "0.0000008",
-          "completion": "0.0000016",
-          "image": "0.0051456",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 4096,
-          "max_completion_tokens": 4096,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "meta-llama/llama-3.2-1b-instruct:free",
         "name": "Meta: Llama 3.2 1B Instruct (free)",
         "created": 1727222400,
@@ -3722,6 +3694,34 @@
         "top_provider": {
           "context_length": 131072,
           "max_completion_tokens": null,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "meta-llama/llama-3.2-90b-vision-instruct",
+        "name": "Meta: Llama 3.2 90B Vision Instruct",
+        "created": 1727222400,
+        "description": "The Llama 90B Vision model is a top-tier, 90-billion-parameter multimodal model designed for the most challenging visual reasoning and language tasks. It offers unparalleled accuracy in image captioning, visual question answering, and advanced image-text comprehension. Pre-trained on vast multimodal datasets and fine-tuned with human feedback, the Llama 90B Vision is engineered to handle the most demanding image-based AI tasks.\n\nThis model is perfect for industries requiring cutting-edge multimodal AI capabilities, particularly those dealing with complex, real-time visual and textual analysis.\n\nClick here for the [original model card](https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md).\n\nUsage of this model is subject to [Meta's Acceptable Use Policy](https://www.llama.com/llama3/use-policy/).",
+        "context_length": 4096,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "Llama3",
+          "instruct_type": "llama3"
+        },
+        "pricing": {
+          "prompt": "0.0000008",
+          "completion": "0.0000016",
+          "image": "0.0051456",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 4096,
+          "max_completion_tokens": 4096,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -3895,8 +3895,64 @@
         "per_request_limits": null
       },
       {
+        "id": "openai/o1-mini-2024-09-12",
+        "name": "OpenAI: o1-mini (2024-09-12)",
+        "created": 1726099200,
+        "description": "The latest and strongest model family from OpenAI, o1 is designed to spend more time thinking before responding.\n\nThe o1 models are optimized for math, science, programming, and other STEM-related tasks. They consistently exhibit PhD-level accuracy on benchmarks in physics, chemistry, and biology. Learn more in the [launch announcement](https://openai.com/o1).\n\nNote: This model is currently experimental and not suitable for production use-cases, and may be heavily rate-limited.",
+        "context_length": 128000,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.0000011",
+          "completion": "0.0000044",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 128000,
+          "max_completion_tokens": 65536,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
         "id": "openai/o1-preview",
         "name": "OpenAI: o1-preview",
+        "created": 1726099200,
+        "description": "The latest and strongest model family from OpenAI, o1 is designed to spend more time thinking before responding.\n\nThe o1 models are optimized for math, science, programming, and other STEM-related tasks. They consistently exhibit PhD-level accuracy on benchmarks in physics, chemistry, and biology. Learn more in the [launch announcement](https://openai.com/o1).\n\nNote: This model is currently experimental and not suitable for production use-cases, and may be heavily rate-limited.",
+        "context_length": 128000,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.000015",
+          "completion": "0.00006",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 128000,
+          "max_completion_tokens": 32768,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "openai/o1-preview-2024-09-12",
+        "name": "OpenAI: o1-preview (2024-09-12)",
         "created": 1726099200,
         "description": "The latest and strongest model family from OpenAI, o1 is designed to spend more time thinking before responding.\n\nThe o1 models are optimized for math, science, programming, and other STEM-related tasks. They consistently exhibit PhD-level accuracy on benchmarks in physics, chemistry, and biology. Learn more in the [launch announcement](https://openai.com/o1).\n\nNote: This model is currently experimental and not suitable for production use-cases, and may be heavily rate-limited.",
         "context_length": 128000,
@@ -3951,62 +4007,6 @@
         "per_request_limits": null
       },
       {
-        "id": "openai/o1-preview-2024-09-12",
-        "name": "OpenAI: o1-preview (2024-09-12)",
-        "created": 1726099200,
-        "description": "The latest and strongest model family from OpenAI, o1 is designed to spend more time thinking before responding.\n\nThe o1 models are optimized for math, science, programming, and other STEM-related tasks. They consistently exhibit PhD-level accuracy on benchmarks in physics, chemistry, and biology. Learn more in the [launch announcement](https://openai.com/o1).\n\nNote: This model is currently experimental and not suitable for production use-cases, and may be heavily rate-limited.",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.000015",
-          "completion": "0.00006",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 32768,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "openai/o1-mini-2024-09-12",
-        "name": "OpenAI: o1-mini (2024-09-12)",
-        "created": 1726099200,
-        "description": "The latest and strongest model family from OpenAI, o1 is designed to spend more time thinking before responding.\n\nThe o1 models are optimized for math, science, programming, and other STEM-related tasks. They consistently exhibit PhD-level accuracy on benchmarks in physics, chemistry, and biology. Learn more in the [launch announcement](https://openai.com/o1).\n\nNote: This model is currently experimental and not suitable for production use-cases, and may be heavily rate-limited.",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.0000011",
-          "completion": "0.0000044",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 65536,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "mistralai/pixtral-12b",
         "name": "Mistral: Pixtral 12B",
         "created": 1725926400,
@@ -4030,34 +4030,6 @@
         "top_provider": {
           "context_length": 4096,
           "max_completion_tokens": null,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "cohere/command-r-plus-08-2024",
-        "name": "Cohere: Command R+ (08-2024)",
-        "created": 1724976000,
-        "description": "command-r-plus-08-2024 is an update of the [Command R+](/models/cohere/command-r-plus) with roughly 50% higher throughput and 25% lower latencies as compared to the previous Command R+ version, while keeping the hardware footprint the same.\n\nRead the launch post [here](https://docs.cohere.com/changelog/command-gets-refreshed).\n\nUse of this model is subject to Cohere's [Usage Policy](https://docs.cohere.com/docs/usage-policy) and [SaaS Agreement](https://cohere.com/saas-agreement).",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Cohere",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.000002375",
-          "completion": "0.0000095",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 4000,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -4091,20 +4063,20 @@
         "per_request_limits": null
       },
       {
-        "id": "qwen/qwen-2.5-vl-7b-instruct",
-        "name": "Qwen: Qwen2.5-VL 7B Instruct",
-        "created": 1724803200,
-        "description": "Qwen2.5 VL 7B is a multimodal LLM from the Qwen Team with the following key enhancements:\n\n- SoTA understanding of images of various resolution & ratio: Qwen2.5-VL achieves state-of-the-art performance on visual understanding benchmarks, including MathVista, DocVQA, RealWorldQA, MTVQA, etc.\n\n- Understanding videos of 20min+: Qwen2.5-VL can understand videos over 20 minutes for high-quality video-based question answering, dialog, content creation, etc.\n\n- Agent that can operate your mobiles, robots, etc.: with the abilities of complex reasoning and decision making, Qwen2.5-VL can be integrated with devices like mobile phones, robots, etc., for automatic operation based on visual environment and text instructions.\n\n- Multilingual Support: to serve global users, besides English and Chinese, Qwen2.5-VL now supports the understanding of texts in different languages inside images, including most European languages, Japanese, Korean, Arabic, Vietnamese, etc.\n\nFor more details, see this [blog post](https://qwenlm.github.io/blog/qwen2-vl/) and [GitHub repo](https://github.com/QwenLM/Qwen2-VL).\n\nUsage of this model is subject to [Tongyi Qianwen LICENSE AGREEMENT](https://huggingface.co/Qwen/Qwen1.5-110B-Chat/blob/main/LICENSE).",
-        "context_length": 4096,
+        "id": "cohere/command-r-plus-08-2024",
+        "name": "Cohere: Command R+ (08-2024)",
+        "created": 1724976000,
+        "description": "command-r-plus-08-2024 is an update of the [Command R+](/models/cohere/command-r-plus) with roughly 50% higher throughput and 25% lower latencies as compared to the previous Command R+ version, while keeping the hardware footprint the same.\n\nRead the launch post [here](https://docs.cohere.com/changelog/command-gets-refreshed).\n\nUse of this model is subject to Cohere's [Usage Policy](https://docs.cohere.com/docs/usage-policy) and [SaaS Agreement](https://cohere.com/saas-agreement).",
+        "context_length": 128000,
         "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "Qwen",
+          "modality": "text->text",
+          "tokenizer": "Cohere",
           "instruct_type": null
         },
         "pricing": {
-          "prompt": "0.0000002",
-          "completion": "0.0000002",
-          "image": "0.0001445",
+          "prompt": "0.000002375",
+          "completion": "0.0000095",
+          "image": "0",
           "request": "0",
           "input_cache_read": "0",
           "input_cache_write": "0",
@@ -4112,8 +4084,8 @@
           "internal_reasoning": "0"
         },
         "top_provider": {
-          "context_length": 4096,
-          "max_completion_tokens": null,
+          "context_length": 128000,
+          "max_completion_tokens": 4000,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -4170,6 +4142,34 @@
         "top_provider": {
           "context_length": 1000000,
           "max_completion_tokens": 8192,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "qwen/qwen-2.5-vl-7b-instruct",
+        "name": "Qwen: Qwen2.5-VL 7B Instruct",
+        "created": 1724803200,
+        "description": "Qwen2.5 VL 7B is a multimodal LLM from the Qwen Team with the following key enhancements:\n\n- SoTA understanding of images of various resolution & ratio: Qwen2.5-VL achieves state-of-the-art performance on visual understanding benchmarks, including MathVista, DocVQA, RealWorldQA, MTVQA, etc.\n\n- Understanding videos of 20min+: Qwen2.5-VL can understand videos over 20 minutes for high-quality video-based question answering, dialog, content creation, etc.\n\n- Agent that can operate your mobiles, robots, etc.: with the abilities of complex reasoning and decision making, Qwen2.5-VL can be integrated with devices like mobile phones, robots, etc., for automatic operation based on visual environment and text instructions.\n\n- Multilingual Support: to serve global users, besides English and Chinese, Qwen2.5-VL now supports the understanding of texts in different languages inside images, including most European languages, Japanese, Korean, Arabic, Vietnamese, etc.\n\nFor more details, see this [blog post](https://qwenlm.github.io/blog/qwen2-vl/) and [GitHub repo](https://github.com/QwenLM/Qwen2-VL).\n\nUsage of this model is subject to [Tongyi Qianwen LICENSE AGREEMENT](https://huggingface.co/Qwen/Qwen1.5-110B-Chat/blob/main/LICENSE).",
+        "context_length": 4096,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "Qwen",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.0000002",
+          "completion": "0.0000002",
+          "image": "0.0001445",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 4096,
+          "max_completion_tokens": null,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -4343,34 +4343,6 @@
         "per_request_limits": null
       },
       {
-        "id": "aetherwiing/mn-starcannon-12b",
-        "name": "Aetherwiing: Starcannon 12B",
-        "created": 1723507200,
-        "description": "Starcannon 12B v2 is a creative roleplay and story writing model, based on Mistral Nemo, using [nothingiisreal/mn-celeste-12b](/nothingiisreal/mn-celeste-12b) as a base, with [intervitens/mini-magnum-12b-v1.1](https://huggingface.co/intervitens/mini-magnum-12b-v1.1) merged in using the [TIES](https://arxiv.org/abs/2306.01708) method.\n\nAlthough more similar to Magnum overall, the model remains very creative, with a pleasant writing style. It is recommended for people wanting more variety than Magnum, and yet more verbose prose than Celeste.",
-        "context_length": 16384,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Mistral",
-          "instruct_type": "chatml"
-        },
-        "pricing": {
-          "prompt": "0.0000008",
-          "completion": "0.0000012",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 16384,
-          "max_completion_tokens": 4096,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "sao10k/l3-lunaris-8b",
         "name": "Sao10K: Llama 3 8B Lunaris",
         "created": 1723507200,
@@ -4394,6 +4366,34 @@
         "top_provider": {
           "context_length": 8192,
           "max_completion_tokens": 8192,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "aetherwiing/mn-starcannon-12b",
+        "name": "Aetherwiing: Starcannon 12B",
+        "created": 1723507200,
+        "description": "Starcannon 12B v2 is a creative roleplay and story writing model, based on Mistral Nemo, using [nothingiisreal/mn-celeste-12b](/nothingiisreal/mn-celeste-12b) as a base, with [intervitens/mini-magnum-12b-v1.1](https://huggingface.co/intervitens/mini-magnum-12b-v1.1) merged in using the [TIES](https://arxiv.org/abs/2306.01708) method.\n\nAlthough more similar to Magnum overall, the model remains very creative, with a pleasant writing style. It is recommended for people wanting more variety than Magnum, and yet more verbose prose than Celeste.",
+        "context_length": 16384,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Mistral",
+          "instruct_type": "chatml"
+        },
+        "pricing": {
+          "prompt": "0.0000008",
+          "completion": "0.0000012",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 16384,
+          "max_completion_tokens": 4096,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -4427,6 +4427,34 @@
         "per_request_limits": null
       },
       {
+        "id": "meta-llama/llama-3.1-405b",
+        "name": "Meta: Llama 3.1 405B (base)",
+        "created": 1722556800,
+        "description": "Meta's latest class of model (Llama 3.1) launched with a variety of sizes & flavors. This is the base 405B pre-trained version.\n\nIt has demonstrated strong performance compared to leading closed-source models in human evaluations.\n\nTo read more about the model release, [click here](https://ai.meta.com/blog/meta-llama-3/). Usage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
+        "context_length": 32768,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Llama3",
+          "instruct_type": "none"
+        },
+        "pricing": {
+          "prompt": "0.000002",
+          "completion": "0.000002",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 32768,
+          "max_completion_tokens": null,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
         "id": "nothingiisreal/mn-celeste-12b",
         "name": "Mistral Nemo 12B Celeste",
         "created": 1722556800,
@@ -4455,19 +4483,19 @@
         "per_request_limits": null
       },
       {
-        "id": "meta-llama/llama-3.1-405b",
-        "name": "Meta: Llama 3.1 405B (base)",
-        "created": 1722556800,
-        "description": "Meta's latest class of model (Llama 3.1) launched with a variety of sizes & flavors. This is the base 405B pre-trained version.\n\nIt has demonstrated strong performance compared to leading closed-source models in human evaluations.\n\nTo read more about the model release, [click here](https://ai.meta.com/blog/meta-llama-3/). Usage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
-        "context_length": 32768,
+        "id": "perplexity/llama-3.1-sonar-small-128k-chat",
+        "name": "Perplexity: Llama 3.1 Sonar 8B",
+        "created": 1722470400,
+        "description": "Llama 3.1 Sonar is Perplexity's latest model family. It surpasses their earlier Sonar models in cost-efficiency, speed, and performance.\n\nThis is a normal offline LLM, but the [online version](/models/perplexity/llama-3.1-sonar-small-128k-online) of this model has Internet access.",
+        "context_length": 131072,
         "architecture": {
           "modality": "text->text",
           "tokenizer": "Llama3",
-          "instruct_type": "none"
+          "instruct_type": null
         },
         "pricing": {
-          "prompt": "0.000002",
-          "completion": "0.000002",
+          "prompt": "0.0000002",
+          "completion": "0.0000002",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -4476,7 +4504,7 @@
           "internal_reasoning": "0"
         },
         "top_provider": {
-          "context_length": 32768,
+          "context_length": 131072,
           "max_completion_tokens": null,
           "is_moderated": false
         },
@@ -4511,34 +4539,6 @@
         "per_request_limits": null
       },
       {
-        "id": "perplexity/llama-3.1-sonar-small-128k-online",
-        "name": "Perplexity: Llama 3.1 Sonar 8B Online",
-        "created": 1722470400,
-        "description": "Llama 3.1 Sonar is Perplexity's latest model family. It surpasses their earlier Sonar models in cost-efficiency, speed, and performance.\n\nThis is the online version of the [offline chat model](/models/perplexity/llama-3.1-sonar-small-128k-chat). It is focused on delivering helpful, up-to-date, and factual responses. #online",
-        "context_length": 127072,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Llama3",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.0000002",
-          "completion": "0.0000002",
-          "image": "0",
-          "request": "0.005",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 127072,
-          "max_completion_tokens": null,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "perplexity/llama-3.1-sonar-large-128k-online",
         "name": "Perplexity: Llama 3.1 Sonar 70B Online",
         "created": 1722470400,
@@ -4567,11 +4567,11 @@
         "per_request_limits": null
       },
       {
-        "id": "perplexity/llama-3.1-sonar-small-128k-chat",
-        "name": "Perplexity: Llama 3.1 Sonar 8B",
+        "id": "perplexity/llama-3.1-sonar-small-128k-online",
+        "name": "Perplexity: Llama 3.1 Sonar 8B Online",
         "created": 1722470400,
-        "description": "Llama 3.1 Sonar is Perplexity's latest model family. It surpasses their earlier Sonar models in cost-efficiency, speed, and performance.\n\nThis is a normal offline LLM, but the [online version](/models/perplexity/llama-3.1-sonar-small-128k-online) of this model has Internet access.",
-        "context_length": 131072,
+        "description": "Llama 3.1 Sonar is Perplexity's latest model family. It surpasses their earlier Sonar models in cost-efficiency, speed, and performance.\n\nThis is the online version of the [offline chat model](/models/perplexity/llama-3.1-sonar-small-128k-chat). It is focused on delivering helpful, up-to-date, and factual responses. #online",
+        "context_length": 127072,
         "architecture": {
           "modality": "text->text",
           "tokenizer": "Llama3",
@@ -4581,14 +4581,14 @@
           "prompt": "0.0000002",
           "completion": "0.0000002",
           "image": "0",
-          "request": "0",
+          "request": "0.005",
           "input_cache_read": "0",
           "input_cache_write": "0",
           "web_search": "0",
           "internal_reasoning": "0"
         },
         "top_provider": {
-          "context_length": 131072,
+          "context_length": 127072,
           "max_completion_tokens": null,
           "is_moderated": false
         },
@@ -4617,34 +4617,6 @@
         },
         "top_provider": {
           "context_length": 32768,
-          "max_completion_tokens": 8192,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "meta-llama/llama-3.1-70b-instruct",
-        "name": "Meta: Llama 3.1 70B Instruct",
-        "created": 1721692800,
-        "description": "Meta's latest class of model (Llama 3.1) launched with a variety of sizes & flavors. This 70B instruct-tuned version is optimized for high quality dialogue usecases.\n\nIt has demonstrated strong performance compared to leading closed-source models in human evaluations.\n\nTo read more about the model release, [click here](https://ai.meta.com/blog/meta-llama-3-1/). Usage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
-        "context_length": 131072,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Llama3",
-          "instruct_type": "llama3"
-        },
-        "pricing": {
-          "prompt": "0.00000012",
-          "completion": "0.0000003",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 131072,
           "max_completion_tokens": 8192,
           "is_moderated": false
         },
@@ -4692,6 +4664,34 @@
         "pricing": {
           "prompt": "0.00000002",
           "completion": "0.00000005",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 131072,
+          "max_completion_tokens": 8192,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "meta-llama/llama-3.1-70b-instruct",
+        "name": "Meta: Llama 3.1 70B Instruct",
+        "created": 1721692800,
+        "description": "Meta's latest class of model (Llama 3.1) launched with a variety of sizes & flavors. This 70B instruct-tuned version is optimized for high quality dialogue usecases.\n\nIt has demonstrated strong performance compared to leading closed-source models in human evaluations.\n\nTo read more about the model release, [click here](https://ai.meta.com/blog/meta-llama-3-1/). Usage of this model is subject to [Meta's Acceptable Use Policy](https://llama.meta.com/llama3/use-policy/).",
+        "context_length": 131072,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Llama3",
+          "instruct_type": "llama3"
+        },
+        "pricing": {
+          "prompt": "0.00000012",
+          "completion": "0.0000003",
           "image": "0",
           "request": "0",
           "input_cache_read": "0",
@@ -4791,34 +4791,6 @@
         "per_request_limits": null
       },
       {
-        "id": "openai/gpt-4o-mini-2024-07-18",
-        "name": "OpenAI: GPT-4o-mini (2024-07-18)",
-        "created": 1721260800,
-        "description": "GPT-4o mini is OpenAI's newest model after [GPT-4 Omni](/models/openai/gpt-4o), supporting both text and image inputs with text outputs.\n\nAs their most advanced small model, it is many multiples more affordable than other recent frontier models, and more than 60% cheaper than [GPT-3.5 Turbo](/models/openai/gpt-3.5-turbo). It maintains SOTA intelligence, while being significantly more cost-effective.\n\nGPT-4o mini achieves an 82% score on MMLU and presently ranks higher than GPT-4 on chat preferences [common leaderboards](https://arena.lmsys.org/).\n\nCheck out the [launch announcement](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) to learn more.\n\n#multimodal",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.00000015",
-          "completion": "0.0000006",
-          "image": "0.007225",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 16384,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "openai/gpt-4o-mini",
         "name": "OpenAI: GPT-4o-mini",
         "created": 1721260800,
@@ -4833,6 +4805,34 @@
           "prompt": "0.00000015",
           "completion": "0.0000006",
           "image": "0.000217",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 128000,
+          "max_completion_tokens": 16384,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "openai/gpt-4o-mini-2024-07-18",
+        "name": "OpenAI: GPT-4o-mini (2024-07-18)",
+        "created": 1721260800,
+        "description": "GPT-4o mini is OpenAI's newest model after [GPT-4 Omni](/models/openai/gpt-4o), supporting both text and image inputs with text outputs.\n\nAs their most advanced small model, it is many multiples more affordable than other recent frontier models, and more than 60% cheaper than [GPT-3.5 Turbo](/models/openai/gpt-3.5-turbo). It maintains SOTA intelligence, while being significantly more cost-effective.\n\nGPT-4o mini achieves an 82% score on MMLU and presently ranks higher than GPT-4 on chat preferences [common leaderboards](https://arena.lmsys.org/).\n\nCheck out the [launch announcement](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) to learn more.\n\n#multimodal",
+        "context_length": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.00000015",
+          "completion": "0.0000006",
+          "image": "0.007225",
           "request": "0",
           "input_cache_read": "0",
           "input_cache_write": "0",
@@ -5015,34 +5015,6 @@
         "per_request_limits": null
       },
       {
-        "id": "ai21/jamba-instruct",
-        "name": "AI21: Jamba Instruct",
-        "created": 1719273600,
-        "description": "The Jamba-Instruct model, introduced by AI21 Labs, is an instruction-tuned variant of their hybrid SSM-Transformer Jamba model, specifically optimized for enterprise applications.\n\n- 256K Context Window: It can process extensive information, equivalent to a 400-page novel, which is beneficial for tasks involving large documents such as financial reports or legal documents\n- Safety and Accuracy: Jamba-Instruct is designed with enhanced safety features to ensure secure deployment in enterprise environments, reducing the risk and cost of implementation\n\nRead their [announcement](https://www.ai21.com/blog/announcing-jamba) to learn more.\n\nJamba has a knowledge cutoff of February 2024.",
-        "context_length": 256000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Other",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.0000005",
-          "completion": "0.0000007",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 256000,
-          "max_completion_tokens": 4096,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "01-ai/yi-large",
         "name": "01.AI: Yi Large",
         "created": 1719273600,
@@ -5065,6 +5037,34 @@
         },
         "top_provider": {
           "context_length": 32768,
+          "max_completion_tokens": 4096,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "ai21/jamba-instruct",
+        "name": "AI21: Jamba Instruct",
+        "created": 1719273600,
+        "description": "The Jamba-Instruct model, introduced by AI21 Labs, is an instruction-tuned variant of their hybrid SSM-Transformer Jamba model, specifically optimized for enterprise applications.\n\n- 256K Context Window: It can process extensive information, equivalent to a 400-page novel, which is beneficial for tasks involving large documents such as financial reports or legal documents\n- Safety and Accuracy: Jamba-Instruct is designed with enhanced safety features to ensure secure deployment in enterprise environments, reducing the risk and cost of implementation\n\nRead their [announcement](https://www.ai21.com/blog/announcing-jamba) to learn more.\n\nJamba has a knowledge cutoff of February 2024.",
+        "context_length": 256000,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Other",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.0000005",
+          "completion": "0.0000007",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 256000,
           "max_completion_tokens": 4096,
           "is_moderated": false
         },
@@ -5211,34 +5211,6 @@
         "per_request_limits": null
       },
       {
-        "id": "nousresearch/hermes-2-pro-llama-3-8b",
-        "name": "NousResearch: Hermes 2 Pro - Llama-3 8B",
-        "created": 1716768000,
-        "description": "Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.",
-        "context_length": 131000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Llama3",
-          "instruct_type": "chatml"
-        },
-        "pricing": {
-          "prompt": "0.000000025",
-          "completion": "0.00000004",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 131000,
-          "max_completion_tokens": 131000,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "mistralai/mistral-7b-instruct:free",
         "name": "Mistral: Mistral 7B Instruct (free)",
         "created": 1716768000,
@@ -5318,6 +5290,34 @@
         "top_provider": {
           "context_length": 32768,
           "max_completion_tokens": 8192,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "nousresearch/hermes-2-pro-llama-3-8b",
+        "name": "NousResearch: Hermes 2 Pro - Llama-3 8B",
+        "created": 1716768000,
+        "description": "Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.",
+        "context_length": 131000,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Llama3",
+          "instruct_type": "chatml"
+        },
+        "pricing": {
+          "prompt": "0.000000025",
+          "completion": "0.00000004",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 131000,
+          "max_completion_tokens": 131000,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -5855,34 +5855,6 @@
         "per_request_limits": null
       },
       {
-        "id": "openai/gpt-4-turbo",
-        "name": "OpenAI: GPT-4 Turbo",
-        "created": 1712620800,
-        "description": "The latest GPT-4 Turbo model with vision capabilities. Vision requests can now use JSON mode and function calling.\n\nTraining data: up to December 2023.",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.00001",
-          "completion": "0.00003",
-          "image": "0.01445",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 4096,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "google/gemini-pro-1.5",
         "name": "Google: Gemini Pro 1.5",
         "created": 1712620800,
@@ -5907,6 +5879,34 @@
           "context_length": 2000000,
           "max_completion_tokens": 8192,
           "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "openai/gpt-4-turbo",
+        "name": "OpenAI: GPT-4 Turbo",
+        "created": 1712620800,
+        "description": "The latest GPT-4 Turbo model with vision capabilities. Vision requests can now use JSON mode and function calling.\n\nTraining data: up to December 2023.",
+        "context_length": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.00001",
+          "completion": "0.00003",
+          "image": "0.01445",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 128000,
+          "max_completion_tokens": 4096,
+          "is_moderated": true
         },
         "per_request_limits": null
       },
@@ -5995,34 +5995,6 @@
         "per_request_limits": null
       },
       {
-        "id": "cohere/command-r",
-        "name": "Cohere: Command R",
-        "created": 1710374400,
-        "description": "Command-R is a 35B parameter model that performs conversational language tasks at a higher quality, more reliably, and with a longer context than previous models. It can be used for complex workflows like code generation, retrieval augmented generation (RAG), tool use, and agents.\n\nRead the launch post [here](https://txt.cohere.com/command-r/).\n\nUse of this model is subject to Cohere's [Usage Policy](https://docs.cohere.com/docs/usage-policy) and [SaaS Agreement](https://cohere.com/saas-agreement).",
-        "context_length": 128000,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Cohere",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.000000475",
-          "completion": "0.000001425",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 128000,
-          "max_completion_tokens": 4000,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "cohere/command",
         "name": "Cohere: Command",
         "created": 1710374400,
@@ -6045,6 +6017,34 @@
         },
         "top_provider": {
           "context_length": 4096,
+          "max_completion_tokens": 4000,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "cohere/command-r",
+        "name": "Cohere: Command R",
+        "created": 1710374400,
+        "description": "Command-R is a 35B parameter model that performs conversational language tasks at a higher quality, more reliably, and with a longer context than previous models. It can be used for complex workflows like code generation, retrieval augmented generation (RAG), tool use, and agents.\n\nRead the launch post [here](https://txt.cohere.com/command-r/).\n\nUse of this model is subject to Cohere's [Usage Policy](https://docs.cohere.com/docs/usage-policy) and [SaaS Agreement](https://cohere.com/saas-agreement).",
+        "context_length": 128000,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Cohere",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.000000475",
+          "completion": "0.000001425",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 128000,
           "max_completion_tokens": 4000,
           "is_moderated": false
         },
@@ -6107,62 +6107,6 @@
         "per_request_limits": null
       },
       {
-        "id": "anthropic/claude-3-sonnet:beta",
-        "name": "Anthropic: Claude 3 Sonnet (self-moderated)",
-        "created": 1709596800,
-        "description": "Claude 3 Sonnet is an ideal balance of intelligence and speed for enterprise workloads. Maximum utility at a lower price, dependable, balanced for scaled deployments.\n\nSee the launch announcement and benchmark results [here](https://www.anthropic.com/news/claude-3-family)\n\n#multimodal",
-        "context_length": 200000,
-        "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "Claude",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.000003",
-          "completion": "0.000015",
-          "image": "0.0048",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 200000,
-          "max_completion_tokens": 4096,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "anthropic/claude-3-sonnet",
-        "name": "Anthropic: Claude 3 Sonnet",
-        "created": 1709596800,
-        "description": "Claude 3 Sonnet is an ideal balance of intelligence and speed for enterprise workloads. Maximum utility at a lower price, dependable, balanced for scaled deployments.\n\nSee the launch announcement and benchmark results [here](https://www.anthropic.com/news/claude-3-family)\n\n#multimodal",
-        "context_length": 200000,
-        "architecture": {
-          "modality": "text+image->text",
-          "tokenizer": "Claude",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.000003",
-          "completion": "0.000015",
-          "image": "0.0048",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 200000,
-          "max_completion_tokens": 4096,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "anthropic/claude-3-opus:beta",
         "name": "Anthropic: Claude 3 Opus (self-moderated)",
         "created": 1709596800,
@@ -6205,6 +6149,62 @@
           "prompt": "0.000015",
           "completion": "0.000075",
           "image": "0.024",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 200000,
+          "max_completion_tokens": 4096,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "anthropic/claude-3-sonnet:beta",
+        "name": "Anthropic: Claude 3 Sonnet (self-moderated)",
+        "created": 1709596800,
+        "description": "Claude 3 Sonnet is an ideal balance of intelligence and speed for enterprise workloads. Maximum utility at a lower price, dependable, balanced for scaled deployments.\n\nSee the launch announcement and benchmark results [here](https://www.anthropic.com/news/claude-3-family)\n\n#multimodal",
+        "context_length": 200000,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "Claude",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.000003",
+          "completion": "0.000015",
+          "image": "0.0048",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 200000,
+          "max_completion_tokens": 4096,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "anthropic/claude-3-sonnet",
+        "name": "Anthropic: Claude 3 Sonnet",
+        "created": 1709596800,
+        "description": "Claude 3 Sonnet is an ideal balance of intelligence and speed for enterprise workloads. Maximum utility at a lower price, dependable, balanced for scaled deployments.\n\nSee the launch announcement and benchmark results [here](https://www.anthropic.com/news/claude-3-family)\n\n#multimodal",
+        "context_length": 200000,
+        "architecture": {
+          "modality": "text+image->text",
+          "tokenizer": "Claude",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.000003",
+          "completion": "0.000015",
+          "image": "0.0048",
           "request": "0",
           "input_cache_read": "0",
           "input_cache_write": "0",
@@ -6527,34 +6527,6 @@
         "per_request_limits": null
       },
       {
-        "id": "google/gemini-pro",
-        "name": "Google: Gemini Pro 1.0",
-        "created": 1702425600,
-        "description": "Google's flagship text generation model. Designed to handle natural language tasks, multiturn text and code chat, and code generation.\n\nSee the benchmarks and prompting guidelines from [Deepmind](https://deepmind.google/technologies/gemini/).\n\nUsage of Gemini is subject to Google's [Gemini Terms of Use](https://ai.google.dev/terms).",
-        "context_length": 32760,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Gemini",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.0000005",
-          "completion": "0.0000015",
-          "image": "0.0025",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 32760,
-          "max_completion_tokens": 8192,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "google/gemini-pro-vision",
         "name": "Google: Gemini Pro Vision 1.0",
         "created": 1702425600,
@@ -6578,6 +6550,34 @@
         "top_provider": {
           "context_length": 16384,
           "max_completion_tokens": 2048,
+          "is_moderated": false
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "google/gemini-pro",
+        "name": "Google: Gemini Pro 1.0",
+        "created": 1702425600,
+        "description": "Google's flagship text generation model. Designed to handle natural language tasks, multiturn text and code chat, and code generation.\n\nSee the benchmarks and prompting guidelines from [Deepmind](https://deepmind.google/technologies/gemini/).\n\nUsage of Gemini is subject to Google's [Gemini Terms of Use](https://ai.google.dev/terms).",
+        "context_length": 32760,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Gemini",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.0000005",
+          "completion": "0.0000015",
+          "image": "0.0025",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 32760,
+          "max_completion_tokens": 8192,
           "is_moderated": false
         },
         "per_request_limits": null
@@ -7031,10 +7031,10 @@
         "per_request_limits": null
       },
       {
-        "id": "google/palm-2-codechat-bison-32k",
-        "name": "Google: PaLM 2 Code Chat 32k",
+        "id": "google/palm-2-chat-bison-32k",
+        "name": "Google: PaLM 2 Chat 32k",
         "created": 1698969600,
-        "description": "PaLM 2 fine-tuned for chatbot conversations that help with code-related questions.",
+        "description": "PaLM 2 is a language model by Google with improved multilingual, reasoning and coding capabilities.",
         "context_length": 32768,
         "architecture": {
           "modality": "text->text",
@@ -7059,10 +7059,10 @@
         "per_request_limits": null
       },
       {
-        "id": "google/palm-2-chat-bison-32k",
-        "name": "Google: PaLM 2 Chat 32k",
+        "id": "google/palm-2-codechat-bison-32k",
+        "name": "Google: PaLM 2 Code Chat 32k",
         "created": 1698969600,
-        "description": "PaLM 2 is a language model by Google with improved multilingual, reasoning and coding capabilities.",
+        "description": "PaLM 2 fine-tuned for chatbot conversations that help with code-related questions.",
         "context_length": 32768,
         "architecture": {
           "modality": "text->text",
@@ -7143,34 +7143,6 @@
         "per_request_limits": null
       },
       {
-        "id": "mistralai/mistral-7b-instruct-v0.1",
-        "name": "Mistral: Mistral 7B Instruct v0.1",
-        "created": 1695859200,
-        "description": "A 7.3B parameter model that outperforms Llama 2 13B on all benchmarks, with optimizations for speed and context length.",
-        "context_length": 32768,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "Mistral",
-          "instruct_type": "mistral"
-        },
-        "pricing": {
-          "prompt": "0.0000002",
-          "completion": "0.0000002",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 32768,
-          "max_completion_tokens": 2048,
-          "is_moderated": false
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "openai/gpt-3.5-turbo-instruct",
         "name": "OpenAI: GPT-3.5 Turbo Instruct",
         "created": 1695859200,
@@ -7195,6 +7167,34 @@
           "context_length": 4095,
           "max_completion_tokens": 4096,
           "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "mistralai/mistral-7b-instruct-v0.1",
+        "name": "Mistral: Mistral 7B Instruct v0.1",
+        "created": 1695859200,
+        "description": "A 7.3B parameter model that outperforms Llama 2 13B on all benchmarks, with optimizations for speed and context length.",
+        "context_length": 32768,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "Mistral",
+          "instruct_type": "mistral"
+        },
+        "pricing": {
+          "prompt": "0.0000002",
+          "completion": "0.0000002",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 32768,
+          "max_completion_tokens": 2048,
+          "is_moderated": false
         },
         "per_request_limits": null
       },
@@ -7647,62 +7647,6 @@
         "per_request_limits": null
       },
       {
-        "id": "openai/gpt-4",
-        "name": "OpenAI: GPT-4",
-        "created": 1685232000,
-        "description": "OpenAI's flagship model, GPT-4 is a large-scale multimodal language model capable of solving difficult problems with greater accuracy than previous models due to its broader general knowledge and advanced reasoning capabilities. Training data: up to Sep 2021.",
-        "context_length": 8191,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.00003",
-          "completion": "0.00006",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 8191,
-          "max_completion_tokens": 4096,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
-        "id": "openai/gpt-4-0314",
-        "name": "OpenAI: GPT-4 (older v0314)",
-        "created": 1685232000,
-        "description": "GPT-4-0314 is the first version of GPT-4 released, with a context length of 8,192 tokens, and was supported until June 14. Training data: up to Sep 2021.",
-        "context_length": 8191,
-        "architecture": {
-          "modality": "text->text",
-          "tokenizer": "GPT",
-          "instruct_type": null
-        },
-        "pricing": {
-          "prompt": "0.00003",
-          "completion": "0.00006",
-          "image": "0",
-          "request": "0",
-          "input_cache_read": "0",
-          "input_cache_write": "0",
-          "web_search": "0",
-          "internal_reasoning": "0"
-        },
-        "top_provider": {
-          "context_length": 8191,
-          "max_completion_tokens": 4096,
-          "is_moderated": true
-        },
-        "per_request_limits": null
-      },
-      {
         "id": "openai/gpt-3.5-turbo",
         "name": "OpenAI: GPT-3.5 Turbo",
         "created": 1685232000,
@@ -7753,6 +7697,62 @@
         },
         "top_provider": {
           "context_length": 16385,
+          "max_completion_tokens": 4096,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "openai/gpt-4",
+        "name": "OpenAI: GPT-4",
+        "created": 1685232000,
+        "description": "OpenAI's flagship model, GPT-4 is a large-scale multimodal language model capable of solving difficult problems with greater accuracy than previous models due to its broader general knowledge and advanced reasoning capabilities. Training data: up to Sep 2021.",
+        "context_length": 8191,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.00003",
+          "completion": "0.00006",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 8191,
+          "max_completion_tokens": 4096,
+          "is_moderated": true
+        },
+        "per_request_limits": null
+      },
+      {
+        "id": "openai/gpt-4-0314",
+        "name": "OpenAI: GPT-4 (older v0314)",
+        "created": 1685232000,
+        "description": "GPT-4-0314 is the first version of GPT-4 released, with a context length of 8,192 tokens, and was supported until June 14. Training data: up to Sep 2021.",
+        "context_length": 8191,
+        "architecture": {
+          "modality": "text->text",
+          "tokenizer": "GPT",
+          "instruct_type": null
+        },
+        "pricing": {
+          "prompt": "0.00003",
+          "completion": "0.00006",
+          "image": "0",
+          "request": "0",
+          "input_cache_read": "0",
+          "input_cache_write": "0",
+          "web_search": "0",
+          "internal_reasoning": "0"
+        },
+        "top_provider": {
+          "context_length": 8191,
           "max_completion_tokens": 4096,
           "is_moderated": true
         },

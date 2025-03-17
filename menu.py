@@ -2,6 +2,8 @@
 import subprocess
 from pathlib import Path
 from typing import Optional
+import tomli  # Better TOML reading
+import tomli_w  # Better TOML writing
 
 import questionary
 
@@ -28,11 +30,13 @@ class DeployManager:
         # Defining command groups
         self.commands = {
             "Development": {
+                'Check securuty': self.check_security,
                 "Check Environment": self.check_environment,
                 "Install Package": self.install_package,
                 "Run Tests": self.run_tests,
                 "Format Code": self.format_code,
                 "Check Linting": self.check_lint,
+                "Print Tree": self.print_tree,
             },
             "Version Control": {
                 "Update Version": self.update_version,
@@ -49,14 +53,20 @@ class DeployManager:
         }
 
     def _get_package_name(self) -> str:
-        """Get package name from setup.cfg."""
-        setup_cfg = self.root_dir / "setup.cfg"
+        """Get package name from pyproject.toml."""
+        pyproject_toml = self.root_dir / "pyproject.toml"
 
-        with open(setup_cfg) as f:
-            for line in f:
-                if line.startswith("name = "):
-                    return line.split("=")[1].strip()
-        raise ValueError("Package name not found in setup.cfg")
+        try:
+            with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
+                pyproject_data = tomli.load(f)
+
+            package_name = pyproject_data.get("tool", {}).get("poetry", {}).get("name")
+            if not package_name:
+                raise ValueError("Package name not found in pyproject.toml")
+
+            return package_name
+        except Exception as e:
+            raise ValueError(f"Error reading package name from pyproject.toml: {e}")
 
     def run_command(
         self, command: str, description: str = "", check: bool = True
@@ -77,6 +87,10 @@ class DeployManager:
             print(f"❌ Error: {e}")
             print(f"📥 Error output:\n{e.stderr}")
             return False
+
+    def print_tree(self) -> bool:
+        """Print tree of files in current directory."""
+        return self.run_command("git ls-files --others --exclude-standard --cached | tree --fromfile", "Printing tree of files")
 
     def check_environment(self) -> bool:
         """Check development environment."""
@@ -140,6 +154,89 @@ class DeployManager:
         commands = [("flake8 .", "Running flake8"), ("mypy .", "Running type checks")]
         return all(self.run_command(cmd, desc) for cmd, desc in commands)
 
+    def check_security(self) -> bool:
+        """Run security audit on dependencies using multiple tools."""
+        print("\n🔍 Running security checks...")
+
+        # Create reports directory if it doesn't exist
+        reports_dir = self.root_dir / "security_reports"
+        reports_dir.mkdir(exist_ok=True)
+
+        # Generate timestamp for report files
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Run pip-audit for Python-specific vulnerabilities
+        print("\n📦 Checking with pip-audit:")
+        pip_audit_report = reports_dir / f"pip_audit_{timestamp}.json"
+        pip_audit_cmd = f"pip-audit --local --format json -o {pip_audit_report}"
+        has_pip_audit_issues = not self.run_command(pip_audit_cmd, "Running pip-audit check")
+
+        # If pip-audit found issues, offer to fix them
+        if has_pip_audit_issues:
+            if questionary.confirm("Would you like pip-audit to attempt fixing the vulnerabilities?").ask():
+                fix_cmd = "pip-audit --fix"
+                self.run_command(fix_cmd, "Attempting to fix vulnerabilities", check=False)
+
+        # Run safety scan with basic output
+        print("\n🔒 Checking with Safety CLI:")
+        safety_report = reports_dir / f"safety_{timestamp}.txt"
+        safety_cmd = f"safety scan --short-report | tee {safety_report}"
+        result = subprocess.run(safety_cmd, shell=True, text=True, capture_output=True)
+
+        # Check if Safety CLI requires login
+        if "Please login or register Safety CLI" in result.stdout or "Please login or register Safety CLI" in result.stderr:
+            print("\n⚠️  Safety CLI requires authentication")
+            print("📝 To use Safety CLI, you need to:")
+            print("1. Register for a free account at https://safetycli.com")
+            print("2. Login using 'safety auth login'")
+            print("3. Run the security check again")
+
+            # Save the login prompt for reference
+            with open(safety_report, 'w') as f:
+                f.write(result.stdout)
+                if result.stderr:
+                    f.write("\nError output:\n")
+                    f.write(result.stderr)
+
+            print(f"\n📋 Login prompt saved to: {safety_report}")
+            has_safety_issues = True
+        else:
+            has_safety_issues = result.returncode != 0
+            if result.stdout:
+                print(f"📤 Output:\n{result.stdout}")
+            if result.stderr:
+                print(f"📥 Error output:\n{result.stderr}")
+
+        # If issues found and we're authenticated, offer quick fixes
+        if has_safety_issues and "Please login or register Safety CLI" not in result.stdout:
+            if questionary.confirm("Would you like to attempt automatic fixes?").ask():
+                fix_level = questionary.select(
+                    "Select maximum version update level for automatic fixes:",
+                    choices=["patch", "minor", "major"],
+                    default="patch"
+                ).ask()
+
+                if fix_level:
+                    # Use no-prompt for faster execution
+                    safety_fix_cmd = f"safety scan --apply-security-updates --auto-security-updates-limit {fix_level} --no-prompt"
+                    self.run_command(safety_fix_cmd, "Applying security fixes", check=False)
+
+        print("\nSecurity check completed. Please review any findings above.")
+        if has_pip_audit_issues or has_safety_issues:
+            print("⚠️  Security issues were found in your dependencies.")
+            print("📝 Note: Some findings might be false positives or already addressed in poetry.lock")
+            print("💡 Tips:")
+            print("  - Use 'poetry update' to update dependencies to their latest allowed versions")
+            print("  - Review 'poetry.lock' for any known vulnerable dependencies")
+            print(f"  - Security reports saved to {reports_dir}")
+            print("  - For detailed reports, run 'safety scan --full-report'")
+        else:
+            print("✅ No known vulnerabilities found.")
+            print(f"📝 Clean security reports saved to {reports_dir}")
+
+        return True
+
     def show_changes(self) -> bool:
         """Show current git changes."""
         commands = [
@@ -174,6 +271,14 @@ class DeployManager:
             print("❌ Tests failed! Aborting upload to TestPyPI.")
             return False
 
+        print("\n🔒 Running security audit...")
+
+        if questionary.confirm("Do you want to run the security audit?").ask():
+            if not self.check_security():
+                print("❌ Security audit failed! Please review the vulnerabilities above.")
+                if not questionary.confirm("Continue despite security warnings?").ask():
+                    return False
+
         print("\n🔨 Tests passed! Building package...")
         if not self.build_package():
             print("❌ Package build failed! Aborting upload to TestPyPI.")
@@ -192,6 +297,13 @@ class DeployManager:
         if not self.run_tests():
             print("❌ Tests failed! Aborting upload to PyPI.")
             return False
+
+        print("\n🔒 Running security audit...")
+        if questionary.confirm("Do you want to run the security audit?").ask():
+            if not self.check_security():
+                print("❌ Security audit failed! Please review the vulnerabilities above.")
+                if not questionary.confirm("Continue despite security warnings?").ask():
+                    return False
 
         print("\n🔨 Tests passed! Building package...")
         if not self.build_package():
@@ -232,43 +344,62 @@ class DeployManager:
         return True
 
     def _get_current_version(self) -> Optional[str]:
-        """Get current package version."""
-        setup_cfg = self.root_dir / "setup.cfg"
-        if not setup_cfg.exists():
-            print("❌ setup.cfg not found")
+        """Get current package version from pyproject.toml."""
+        pyproject_toml = self.root_dir / "pyproject.toml"
+        if not pyproject_toml.exists():
+            print("❌ pyproject.toml not found")
             return None
 
-        with open(setup_cfg) as f:
-            for line in f:
-                if line.startswith("version = "):
-                    return line.split("=")[1].strip()
-        return None
+        try:
+            with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
+                pyproject_data = tomli.load(f)
+
+            version = pyproject_data.get("tool", {}).get("poetry", {}).get("version")
+            if not version:
+                print("❌ Version not found in pyproject.toml")
+                return None
+
+            return version
+        except Exception as e:
+            print(f"❌ Error reading pyproject.toml: {e}")
+            return None
 
     def _update_version_in_files(self, new_version: str) -> None:
         """Update version in configuration files."""
         module_name = self.package_name
+        pyproject_toml = self.root_dir / "pyproject.toml"
 
-        files_to_update = {
-            "setup.cfg": (r"version = .*", f"version = {new_version}"),
-            f"src/{module_name}/__init__.py": (
-                r'__version__ = ".*"',
-                f'__version__ = "{new_version}"',
-            ),
-        }
+        # Update pyproject.toml
+        if pyproject_toml.exists():
+            try:
+                with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
+                    pyproject_data = tomli.load(f)
 
-        import re
+                if "tool" in pyproject_data and "poetry" in pyproject_data["tool"]:
+                    pyproject_data["tool"]["poetry"]["version"] = new_version
 
-        for filename, (pattern, replacement) in files_to_update.items():
-            filepath = self.root_dir / filename
-            if not filepath.exists():
-                continue
+                    with open(pyproject_toml, "wb") as f:  # Open in binary mode for tomli-w
+                        tomli_w.dump(pyproject_data, f)
+            except Exception as e:
+                print(f"❌ Error updating pyproject.toml: {e}")
 
-            with open(filepath) as f:
+        # Update version in __init__.py if it exists
+        init_path = self.root_dir / "src" / module_name / "__init__.py"
+        if not init_path.exists():
+            init_path = self.root_dir / module_name / "__init__.py"
+
+        if init_path.exists():
+            import re
+            with open(init_path) as f:
                 content = f.read()
 
-            content = re.sub(pattern, replacement, content)
+            content = re.sub(
+                r'__version__ = ".*"',
+                f'__version__ = "{new_version}"',
+                content
+            )
 
-            with open(filepath, "w") as f:
+            with open(init_path, "w") as f:
                 f.write(content)
 
     def show_menu(self) -> None:
@@ -284,10 +415,10 @@ class DeployManager:
             choices.extend([questionary.Separator("━" * 30), "Exit"])
 
             action = questionary.select(
-                "Select action:",
+                message=f"{self.package_name.upper()} v{self.current_version}",
                 choices=choices,
                 style=self.style,
-                instruction="Use ↑↓ to navigate, Enter to select",
+                # instruction="Use ↑↓ to navigate, Enter to select",
             ).ask()
 
             if not action or action == "Exit":
