@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
-from pydantic2 import PydanticAIClient, ModelSettings
+from src.pydantic2 import PydanticAIClient, ModelSettings
 from dotenv import load_dotenv
 
 # Load environment variables
