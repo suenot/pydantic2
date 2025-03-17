@@ -1,19 +1,5 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "www/mkdocs.yml",
-            "use": "@vercel/python",
-            "config": {
-                "buildCommand": "pip install mkdocs mkdocs-material mkdocstrings[python] mkdocs-minify-plugin mkdocs-git-revision-date-localized-plugin 'mkdocs-material[imaging]' && mkdocs build",
-                "outputDirectory": "site"
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "/site/$1"
-        }
-    ]
+    "buildCommand": null,
+    "outputDirectory": "www/site",
+    "framework": null
 }
