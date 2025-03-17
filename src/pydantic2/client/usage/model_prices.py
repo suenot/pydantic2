@@ -8,6 +8,7 @@ from peewee import (
     Model, SqliteDatabase, CharField, IntegerField,
     FloatField, DateTimeField, TextField, AutoField, BooleanField, DoesNotExist
 )
+from ...utils.logger import logger
 
 # Database configuration
 THIS_DIR = Path(__file__).parent.parent.parent
@@ -87,9 +88,9 @@ class ModelPriceManager:
             if force_update or self.should_update_models():
                 self.update_from_openrouter()
         except Exception as e:
-            print(f"Warning: Failed to update model prices during initialization: {e}")
+            logger.error(f"Failed to update model prices during initialization: {e}")
 
-        print("Model price manager initialized")
+        logger.info("Model price manager initialized")
 
     def should_update_models(self) -> bool:
         """Check if models should be updated based on last update time."""
@@ -109,10 +110,10 @@ class ModelPriceManager:
     def update_from_openrouter(self, force: bool = False):
         """Update model prices from OpenRouter."""
         if not force and not self.should_update_models():
-            print("Models are up to date (last update less than 24 hours ago)")
+            logger.info("Models are up to date (last update less than 24 hours ago)")
             return
 
-        print("Updating models from OpenRouter...")
+        logger.info("Updating models from OpenRouter...")
         update_record = None
 
         try:
@@ -206,14 +207,14 @@ class ModelPriceManager:
             # Update success status
             update_record.status = 'success'
             update_record.save()
-            print("Models updated successfully")
+            logger.info("Models updated successfully")
 
         except Exception as e:
             if update_record:
                 update_record.status = 'failed'
                 update_record.error_message = str(e)
                 update_record.save()
-            print(f"Error updating models: {e}")
+            logger.error(f"Error updating models: {e}")
             raise
 
     def get_model_price(self, model_id: str) -> Optional[LLMModel]:

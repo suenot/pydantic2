@@ -20,10 +20,10 @@ def main():
         model_name="openai/gpt-4o-mini-2024-07-18",
         client_id="test_client",
         user_id="test_user",
-        verbose=True,
+        verbose=False,
         retries=3,
         online=True,
-        max_budget=0.0003
+        # max_budget=0.0003
     ) as client:
         try:
             # Set up the conversation with system message
@@ -51,12 +51,7 @@ def main():
 
             # Print the response
             print("\nAI Response:")
-            print(f"Message: {response.message}")
-            print(f"Confidence: {response.confidence:.2f}")
-            if response.sources:
-                print("Sources:")
-                for source in response.sources:
-                    print(f"- {source}")
+            print(response.model_dump_json(indent=2))
 
             # Print usage statistics
             stats = client.get_usage_stats()

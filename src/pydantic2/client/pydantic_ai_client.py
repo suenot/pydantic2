@@ -8,18 +8,15 @@ from pydantic_ai.settings import ModelSettings
 from .message_handler import MessageHandler
 from .usage.usage_info import UsageInfo
 from .usage.model_prices import ModelPriceManager
+from ..utils.logger import logger
 import os
 from dotenv import load_dotenv
 import time
 import uuid
-import logging
 import asyncio
 
 # Load environment variables
 load_dotenv()
-
-# Configure logging
-logger = logging.getLogger("pydantic_ai_client")
 
 
 class BudgetExceeded(Exception):
@@ -44,12 +41,17 @@ class PydanticAIClient:
         model_settings: Optional[ModelSettings] = None,
     ):
         """Initialize the client."""
+        # Set verbose mode for logger
+        logger.set_verbose(verbose)
+
         # Store original model name for price lookups
         self.base_model_name = model_name.split(':')[0]  # Remove :online suffix if present
 
         # Add online suffix if needed
         if online and not model_name.endswith(':online'):
             model_name = f"{model_name}:online"
+            # Always show bright message for online mode regardless of verbose
+            logger.success("🌐 Online search mode is enabled - AI will use real-time internet data!")
 
         self.model_name = model_name
         self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
@@ -66,8 +68,7 @@ class PydanticAIClient:
         self.model_settings = model_settings
 
         # Force update prices if they haven't been fetched yet
-        if self.verbose:
-            logger.info("Checking model prices...")
+        logger.debug("Checking model prices...")
         self.price_manager.update_from_openrouter(force=True)
 
         self.model = OpenAIModel(
@@ -78,12 +79,9 @@ class PydanticAIClient:
             ),
         )
 
-        if self.verbose:
-            logger.info(f"Initialized PydanticAIClient with model: {model_name}")
-            if online:
-                logger.info("Online search capability enabled")
-            if max_budget:
-                logger.info(f"Maximum budget set to ${max_budget:.2f}")
+        logger.info(f"Initialized PydanticAIClient with model: {model_name}")
+        if max_budget:
+            logger.info(f"Maximum budget set to ${max_budget:.2f}")
 
     def clear_messages(self) -> None:
         """Clear all messages in the message handler."""
@@ -109,8 +107,7 @@ class PydanticAIClient:
         # Use base model name for price lookup
         model_price = self.price_manager.get_model_price(self.base_model_name)
         if not model_price:
-            if self.verbose:
-                logger.warning(f"No price information found for model {self.base_model_name}")
+            logger.warning(f"No price information found for model {self.base_model_name}")
             return 0.0
 
         # Get actual float values from the model price fields
@@ -118,19 +115,22 @@ class PydanticAIClient:
         output_cost = (usage.response_tokens or 0) * model_price.get_output_cost()
         total_cost = input_cost + output_cost
 
-        if self.verbose:
-            logger.info(f"Cost calculation - Input: ${input_cost:.4f}, Output: ${output_cost:.4f}, Total: ${total_cost:.4f}")
+        logger.debug(f"Cost calculation - Input: ${input_cost:.4f}, Output: ${output_cost:.4f}, Total: ${total_cost:.4f}")
 
         return total_cost
 
     def _check_budget(self):
         """Check if user has exceeded their budget."""
-        if self.max_budget is not None and self.user_id:
+        if self.max_budget is not None:
             current_usage = self.usage_info.get_usage_stats()
-            if current_usage and current_usage.get('total_cost', 0) >= self.max_budget:
-                raise BudgetExceeded(
-                    f"User {self.user_id} has exceeded their budget limit of ${self.max_budget:.2f}"
-                )
+            current_cost = current_usage.get('total_cost', 0) if current_usage else 0
+
+            logger.debug(f"Current cost: ${current_cost:.4f}, Budget limit: ${self.max_budget:.4f}")
+
+            if current_cost >= self.max_budget:
+                error_msg = f"Budget limit of ${self.max_budget:.4f} exceeded (current cost: ${current_cost:.4f})"
+                logger.error(error_msg)
+                raise BudgetExceeded(error_msg)
 
     def _log_request(self, request_id: str):
         """Log the request."""
@@ -178,7 +178,9 @@ class PydanticAIClient:
         if self.verbose:
             logger.info(f"Generating response for request {request_id}")
 
+        # Check budget before making the request
         self._check_budget()
+
         self._log_request(request_id)
         start_time = time.perf_counter()
 
@@ -202,6 +204,9 @@ class PydanticAIClient:
 
             usage = self._calculate_token_usage(result)
             self._log_response(result, usage, response_time, request_id)
+
+            # Check budget after the response
+            self._check_budget()
 
             return result.data
 
@@ -256,6 +261,26 @@ class PydanticAIClient:
         if self.verbose:
             logger.info(f"Usage statistics: {stats}")
         return stats
+
+    def print_usage_info(self):
+        """Print usage information."""
+        stats = self.get_usage_stats()
+        if not stats:
+            logger.warning("No usage statistics available")
+            return
+
+        logger.info("\nUsage Statistics:")
+        logger.info(f"Total Requests: {stats['total_requests']}")
+        logger.info(f"Total Tokens: {stats['total_tokens']}")
+        logger.info(f"Total Cost: ${stats['total_cost']:.4f}")
+
+        if stats.get('models'):
+            logger.info("\nPer-Model Statistics:")
+            for model in stats['models']:
+                logger.info(f"  {model['model_name']}:")
+                logger.info(f"    Requests: {model['requests']}")
+                logger.info(f"    Tokens: {model['tokens']}")
+                logger.info(f"    Cost: ${model['cost']:.4f}")
 
     def __enter__(self):
         """Context manager entry."""

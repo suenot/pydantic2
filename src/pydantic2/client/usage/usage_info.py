@@ -6,10 +6,7 @@ from peewee import (
     FloatField, DateTimeField, TextField, AutoField, fn
 )
 import sqlite3
-from .model_prices import ModelPriceManager
-import logging
-
-logger = logging.getLogger("usage_info")
+from ...utils.logger import logger
 
 # Database configuration
 THIS_DIR = Path(__file__).parent.parent.parent
@@ -60,7 +57,7 @@ class UsageInfo:
         try:
             db.connect()
             db.create_tables([UsageLog], safe=True)
-            logger.info("Usage info initialized with database")
+            logger.debug("Usage info initialized with database")
         except Exception as e:
             logger.error(f"Database error: {e}")
             self.db = None
