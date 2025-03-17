@@ -1,170 +1,185 @@
-# Basic Usage Example
+# Basic Usage Examples
 
-This example demonstrates how to use Pydantic2 for structured responses from LLMs.
+This page provides simple examples to help you get started with Pydantic2.
+
+## Simple Text Generation
 
 ```python
 from pydantic import BaseModel, Field
-from typing import List
-import json
-import uuid
+from pydantic2 import PydanticAIClient
 
-from pydantic2 import LiteLLMClient, Request
+class Summary(BaseModel):
+    content: str = Field(description="Summarized content")
 
-
-# Define a custom response model
-class UserDetail(BaseModel):
-    """Model for extracting user details from text."""
-    name: str = Field(description="The user's name")
-    age: int = Field(description="The user's age")
-    interests: List[str] = Field(description="List of user's interests")
-
-
-def main():
-    """Example using LiteLLM client with OpenAI and cost tracking."""
-    # Generate a unique user_id for the example
-    user_id = str(uuid.uuid4())
-
-    # Create a request configuration
-    config = Request(
-        model="openrouter/openai/gpt-4o-mini-2024-07-18",
-        temperature=0.7,
-        max_tokens=500,
-        max_budget=0.0001,  # $0.0001 USD (very small budget)
-        client_id='demo',
-        user_id=user_id,
-        answer_model=UserDetail,
-        verbose=False,
-        logs=False,
-        online=True,
-    )
-
-    # Initialize the client
-    client = LiteLLMClient(config)
-
-    client.msg.add_message_user("Describe who is David Copperfield")
-
-    try:
-        # Generate a response
-        response: UserDetail = client.generate_response()
-
-        # Print the structured response
-        print(json.dumps(response.model_dump(), indent=2))
-
-    except Exception as e:
-        print(f"Error: {e}")
-
-
-if __name__ == "__main__":
-    main()
-```
-
-## Step-by-Step Explanation
-
-### 1. Define a Response Model
-
-First, we define a Pydantic model that represents the structure of the response we want:
-
-```python
-class UserDetail(BaseModel):
-    """Model for extracting user details from text."""
-    name: str = Field(description="The user's name")
-    age: int = Field(description="The user's age")
-    interests: List[str] = Field(description="List of user's interests")
-```
-
-### 2. Configure the Request
-
-Next, we create a `Request` object with our desired configuration:
-
-```python
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    temperature=0.7,
-    max_tokens=500,
-    max_budget=0.0001,  # $0.0001 USD (very small budget)
-    client_id='demo',
-    user_id=user_id,
-    answer_model=UserDetail,
-    verbose=False,
-    logs=False,
-    online=True,
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    client_id="my_app",      # Required for tracking
+    user_id="user123"       # Required for tracking
 )
+
+# Add message
+client.message_handler.add_message_user(
+    "Summarize the benefits of exercise."
+)
+
+response: Summary = client.generate(result_type=Summary)
+print(response.content)
 ```
 
-### 3. Initialize the Client
-
-We create a `LiteLLMClient` with our configuration:
+## Structured Output
 
 ```python
-client = LiteLLMClient(config)
+from typing import List
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+
+class MovieRecommendation(BaseModel):
+    title: str = Field(description="Movie title")
+    year: int = Field(description="Year of release")
+    genre: List[str] = Field(description="Movie genres")
+    summary: str = Field(description="Brief movie summary")
+    rating: float = Field(ge=0, le=10, description="Rating out of 10")
+
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    client_id="my_app",
+    user_id="user123"
+)
+
+# Add system context
+client.message_handler.add_message_system(
+    "You are a movie expert. Provide detailed recommendations."
+)
+
+# Add user request
+client.message_handler.add_message_user(
+    "Recommend a classic science fiction movie."
+)
+
+recommendation = client.generate(result_type=MovieRecommendation)
+
+print(f"Title: {recommendation.title} ({recommendation.year})")
+print(f"Genres: {', '.join(recommendation.genre)}")
+print(f"Rating: {recommendation.rating}/10")
+print(f"Summary: {recommendation.summary}")
 ```
 
-### 4. Add a Message
-
-We add a message to the conversation:
+## Message Builder Pattern
 
 ```python
-client.msg.add_message_user("Describe who is David Copperfield")
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+
+class Recipe(BaseModel):
+    name: str = Field(description="Recipe name")
+    ingredients: list[str] = Field(description="List of ingredients")
+    instructions: list[str] = Field(description="Step-by-step instructions")
+    prep_time: int = Field(description="Preparation time in minutes")
+    serves: int = Field(description="Number of servings")
+
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    client_id="my_recipe_app",
+    user_id="chef123"
+)
+
+# Build the conversation
+client.message_handler.add_message_system(
+    "You are a professional chef specializing in simple recipes."
+)
+
+client.message_handler.add_message_user(
+    "I need a quick pasta recipe."
+)
+
+# Add context about ingredients
+client.message_handler.add_message_block(
+    "AVAILABLE_INGREDIENTS",
+    ["pasta", "olive oil", "garlic", "tomatoes", "cheese"]
+)
+
+# Generate the recipe
+recipe = client.generate(result_type=Recipe)
+
+print(f"# {recipe.name}")
+print(f"Prep time: {recipe.prep_time} min | Serves: {recipe.serves}\n")
+
+print("## Ingredients")
+for item in recipe.ingredients:
+    print(f"- {item}")
+
+print("\n## Instructions")
+for i, step in enumerate(recipe.instructions, 1):
+    print(f"{i}. {step}")
 ```
 
-### 5. Generate a Response
-
-We generate a response and get it in our structured format:
+## Context Manager Usage
 
 ```python
-response: UserDetail = client.generate_response()
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+
+class Answer(BaseModel):
+    content: str = Field(description="Answer content")
+
+# Using context manager for auto-cleanup
+with PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    verbose=True
+) as client:
+    # First query
+    client.message_handler.add_message_user("What is Python?")
+    response1 = client.generate(result_type=Answer)
+    print(f"Answer 1: {response1.content}\n")
+
+    # Add response to conversation
+    client.message_handler.add_message_assistant(response1.content)
+
+    # Second query
+    client.message_handler.add_message_user("What are its main applications?")
+    response2 = client.generate(result_type=Answer)
+    print(f"Answer 2: {response2.content}")
+
+    # Get usage stats before exiting context
+    stats = client.get_usage_stats()
+    print(f"\nTotal cost: ${stats.get('total_cost', 0):.4f}")
 ```
 
-### 6. Access the Response
-
-We can access the fields of the response directly or convert it to JSON:
+## Budget-Aware Usage
 
 ```python
-print(json.dumps(response.model_dump(), indent=2))
-```
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+from pydantic2.client.exceptions import BudgetExceeded
 
-## Expected Output
+class Analysis(BaseModel):
+    content: str = Field(description="Analysis content")
 
-The output of this example will look something like this:
+# Set a tight budget
+client = PydanticAIClient(max_budget=0.01)  # $0.01 USD
 
-```
-Using user_id: 123e4567-e89b-12d3-a456-426614174000
-Setting budget: $0.000100 USD (very small budget)
+try:
+    # Try to generate a response (might exceed budget)
+    client.message_handler.add_message_user(
+        "Provide a detailed analysis of global economic trends."
+    )
+    response: Analysis = client.generate(result_type=Analysis)
+    print(response.content)
 
-Prompt token count: 12
-Max tokens for model: 4096
+except BudgetExceeded as e:
+    print(f"Budget exceeded! Limit: ${e.budget_limit:.4f}, Cost: ${e.current_cost:.4f}")
 
-=== Budget Information ===
-max_budget: $0.000100
-estimated_cost: $0.000012
-remaining_budget: $0.000088
-budget_exceeded: False
-
-Structured Response:
-{
-  "name": "David Copperfield",
-  "age": 67,
-  "interests": [
-    "Magic",
-    "Illusions",
-    "Performance art",
-    "Collecting rare artifacts",
-    "Philanthropy"
-  ]
-}
-
-Model used: openrouter/openai/gpt-4o-mini-2024-07-18
-Response time: 1.234 seconds
-Total token count: 56
-
-=== Usage Information ===
-Model: openrouter/openai/gpt-4o-mini-2024-07-18
-Input tokens: 12
-Output tokens: 44
-Total tokens: 56
-Cost: $0.000056
+    # Fall back to a smaller request
+    smaller_client = PydanticAIClient(max_budget=0.01)
+    smaller_client.message_handler.add_message_user(
+        "Summarize current economic trends in one paragraph."
+    )
+    smaller_response = smaller_client.generate(result_type=Analysis)
+    print(f"Fallback analysis: {smaller_response.content}")
 ```
 
 ## Next Steps
 
-Now that you've seen a basic example, check out the [Django Integration](django-integration.md) example to learn how to integrate Pydantic2 with Django.
+- Try [Chat Completion](chat-completion.md) examples
+- Learn about [Error Handling](../core-concepts/error-handling.md)
+- Explore [Budget Management](../core-concepts/budget-management.md)

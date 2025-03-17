@@ -1,362 +1,125 @@
-# Usage API Reference
+# Usage Tracking API
 
-This page provides detailed information about the usage API in Pydantic2.
+Pydantic2 provides comprehensive usage tracking and analytics capabilities.
 
-## UsageClass
+## Overview
 
-The `UsageClass` class is the main class for tracking usage statistics.
+The usage tracking system:
+1. Records all API requests and responses
+2. Tracks token usage and costs
+3. Stores data in a local SQLite database
+4. Provides usage statistics and reporting
 
-### Constructor
+## Requirements
 
-```python
-def __init__(self, config: Request):
-    """Initialize the UsageClass with a configuration."""
-```
-
-#### Parameters
-
-- `config` (`Request`): The configuration for the usage tracker.
-
-### Methods
-
-#### get_usage_stats
+To enable usage tracking, you must provide both:
+- `client_id`: Identifier for your application
+- `user_id`: Identifier for the end user
 
 ```python
-def get_usage_stats(self) -> dict:
-    """Get usage statistics."""
-```
+from pydantic2 import PydanticAIClient
 
-Gets usage statistics.
-
-**Returns**:
-- A dictionary with usage statistics.
-
-**Example**:
-```python
-usage_stats = client.usage_tracker.get_usage_stats()
-```
-
-#### get_client_usage_data
-
-```python
-def get_client_usage_data(self, client_id: str = None) -> ClientUsageData:
-    """Get detailed usage data for a client."""
-```
-
-Gets detailed usage data for a client.
-
-**Parameters**:
-- `client_id` (`str`, optional): The client ID. If not provided, uses the client ID from the configuration.
-
-**Returns**:
-- A `ClientUsageData` instance with detailed usage data.
-
-**Example**:
-```python
-usage_data = client.usage_tracker.get_client_usage_data()
-```
-
-#### get_request_details
-
-```python
-def get_request_details(self, request_id: str) -> RequestDetails:
-    """Get detailed information about a specific request."""
-```
-
-Gets detailed information about a specific request.
-
-**Parameters**:
-- `request_id` (`str`): The request ID.
-
-**Returns**:
-- A `RequestDetails` instance with detailed information about the request.
-
-**Example**:
-```python
-request_details = client.usage_tracker.get_request_details(request_id)
-```
-
-#### log_request
-
-```python
-def log_request(
-    self,
-    request_id: str,
-    model_name: str,
-    model_provider: str,
-    client_id: str,
-    user_id: str,
-    config_json: str,
-    request_raw: str,
-    request_json: str,
-    response_json: str,
-    response_raw: str,
-    input_tokens: int,
-    output_tokens: int,
-    input_cost: float,
-    output_cost: float,
-    status: str,
-    error_message: str = None
-) -> None:
-    """Log a request."""
-```
-
-Logs a request.
-
-**Parameters**:
-- `request_id` (`str`): The ID of the request.
-- `model_name` (`str`): The name of the model.
-- `model_provider` (`str`): The provider of the model.
-- `client_id` (`str`): The client ID.
-- `user_id` (`str`): The user ID.
-- `config_json` (`str`): The configuration as JSON.
-- `request_raw` (`str`): The raw request.
-- `request_json` (`str`): The request as JSON.
-- `response_json` (`str`): The response as JSON.
-- `response_raw` (`str`): The raw response.
-- `input_tokens` (`int`): The number of input tokens.
-- `output_tokens` (`int`): The number of output tokens.
-- `input_cost` (`float`): The cost of input tokens.
-- `output_cost` (`float`): The cost of output tokens.
-- `status` (`str`): The status of the request.
-- `error_message` (`str`, optional): The error message, if any.
-
-**Example**:
-```python
-client.usage_tracker.log_request(
-    request_id="123",
-    model_name="gpt-4",
-    model_provider="openai",
-    client_id="my_app",
-    user_id="user123",
-    config_json="{}",
-    request_raw="",
-    request_json="{}",
-    response_json="{}",
-    response_raw="",
-    input_tokens=10,
-    output_tokens=20,
-    input_cost=0.0001,
-    output_cost=0.0002,
-    status="success"
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini-2024-07-18",
+    client_id="my_app",      # Required for tracking
+    user_id="user123"       # Required for tracking
 )
 ```
 
-## UsageLogger
+## Accessing Usage Data
 
-The `UsageLogger` class is a simpler class for logging usage statistics.
-
-### Constructor
+### Get Usage Statistics
 
 ```python
-def __init__(self, config: Request):
-    """Initialize the UsageLogger with a configuration."""
+# Get overall statistics
+stats = client.get_usage_stats()
+print(f"Total Requests: {stats['total_requests']}")
+print(f"Total Tokens: {stats['total_tokens']}")
+print(f"Total Cost: ${stats['total_cost']:.4f}")
+
+# Print detailed information
+client.print_usage_info()
+
+# Get per-model statistics
+for model in stats['models']:
+    print(f"\nModel: {model['model_name']}")
+    print(f"Requests: {model['requests']}")
+    print(f"Tokens: {model['tokens']}")
+    print(f"Cost: ${model['cost']:.4f}")
 ```
 
-#### Parameters
+### View Usage Database
 
-- `config` (`Request`): The configuration for the usage logger.
-
-### Methods
-
-#### get_usage_stats
-
-```python
-def get_usage_stats(self) -> dict:
-    """Get usage statistics."""
+Use the built-in CLI tool:
+```bash
+# View usage database in browser (http://localhost:8002)
+pydantic2 --view-usage
 ```
 
-Gets usage statistics.
+## Database Schema
 
-**Returns**:
-- A dictionary with usage statistics.
+The usage database (`usage.db`) contains the following table:
 
-**Example**:
-```python
-usage_stats = logger.get_usage_stats()
+### UsageLog
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | AutoField | Unique identifier |
+| client_id | CharField | Client identifier |
+| user_id | CharField | User identifier |
+| request_id | CharField | Request identifier |
+| model_name | CharField | Model used |
+| raw_request | TextField | Raw request data |
+| raw_response | TextField | Raw response data |
+| error_message | TextField | Error message (if any) |
+| prompt_tokens | IntegerField | Tokens in prompt |
+| completion_tokens | IntegerField | Tokens in completion |
+| total_tokens | IntegerField | Total tokens used |
+| total_cost | FloatField | Total cost in USD |
+| response_time | FloatField | Response time in seconds |
+| status | CharField | Request status |
+| created_at | DateTimeField | Creation timestamp |
+| updated_at | DateTimeField | Last update timestamp |
+
+## Model Pricing
+
+Model prices are automatically fetched from OpenRouter and stored in a local database (`models.db`).
+
+### Viewing Model Prices
+
+Use the CLI tool:
+```bash
+# View models database in browser (http://localhost:8001)
+pydantic2 --view-models
 ```
 
-#### log_request
+### Price Updates
+
+- Prices are automatically updated when initializing `PydanticAIClient`
+- Updates occur if the last update was more than 24 hours ago
+- Force updates by initializing with `force_update=True`
+
+## Budget Management
+
+Set budget limits and monitor usage:
 
 ```python
-def log_request(
-    self,
-    request_id: str,
-    model_name: str,
-    model_provider: str,
-    client_id: str,
-    user_id: str,
-    input_tokens: int,
-    output_tokens: int,
-    input_cost: float,
-    output_cost: float,
-    status: str,
-    error_message: str = None
-) -> None:
-    """Log a request."""
-```
-
-Logs a request.
-
-**Parameters**:
-- `request_id` (`str`): The ID of the request.
-- `model_name` (`str`): The name of the model.
-- `model_provider` (`str`): The provider of the model.
-- `client_id` (`str`): The client ID.
-- `user_id` (`str`): The user ID.
-- `input_tokens` (`int`): The number of input tokens.
-- `output_tokens` (`int`): The number of output tokens.
-- `input_cost` (`float`): The cost of input tokens.
-- `output_cost` (`float`): The cost of output tokens.
-- `status` (`str`): The status of the request.
-- `error_message` (`str`, optional): The error message, if any.
-
-**Example**:
-```python
-logger.log_request(
-    request_id="123",
-    model_name="gpt-4",
-    model_provider="openai",
+client = PydanticAIClient(
     client_id="my_app",
     user_id="user123",
-    input_tokens=10,
-    output_tokens=20,
-    input_cost=0.0001,
-    output_cost=0.0002,
-    status="success"
+    max_budget=1.0  # $1.00 USD limit
 )
+
+try:
+    response = client.generate(...)
+except BudgetExceeded as e:
+    print(f"Budget exceeded: ${e.current_cost:.4f} / ${e.budget_limit:.4f}")
 ```
 
-## Usage Models
+## Best Practices
 
-### ClientUsageData
-
-The `ClientUsageData` class represents detailed usage data for a client.
-
-```python
-class ClientUsageData(BaseModel):
-    """Detailed usage data for a client."""
-    client_id: str
-    total_requests: int
-    successful_requests: int
-    failed_requests: int
-    total_input_tokens: int
-    total_output_tokens: int
-    total_cost: float
-    models_used: List[ModelUsage]
-    recent_requests: List[RequestSummary]
-```
-
-#### Fields
-
-- `client_id` (`str`): The client ID.
-- `total_requests` (`int`): The total number of requests.
-- `successful_requests` (`int`): The number of successful requests.
-- `failed_requests` (`int`): The number of failed requests.
-- `total_input_tokens` (`int`): The total number of input tokens.
-- `total_output_tokens` (`int`): The total number of output tokens.
-- `total_cost` (`float`): The total cost in USD.
-- `models_used` (`List[ModelUsage]`): A list of models used.
-- `recent_requests` (`List[RequestSummary]`): A list of recent requests.
-
-### ModelUsage
-
-The `ModelUsage` class represents usage statistics for a specific model.
-
-```python
-class ModelUsage(BaseModel):
-    """Usage statistics for a specific model."""
-    model_name: str
-    model_provider: str
-    total_input_tokens: int
-    total_output_tokens: int
-    total_cost: float
-    last_used: datetime
-```
-
-#### Fields
-
-- `model_name` (`str`): The name of the model.
-- `model_provider` (`str`): The provider of the model.
-- `total_input_tokens` (`int`): The total number of input tokens.
-- `total_output_tokens` (`int`): The total number of output tokens.
-- `total_cost` (`float`): The total cost in USD.
-- `last_used` (`datetime`): The last time the model was used.
-
-### RequestSummary
-
-The `RequestSummary` class represents a summary of a request.
-
-```python
-class RequestSummary(BaseModel):
-    """Summary of a request."""
-    request_id: str
-    timestamp: datetime
-    model_name: str
-    model_provider: str
-    input_tokens: int
-    output_tokens: int
-    total_cost: float
-    status: str
-    error_message: Optional[str] = None
-```
-
-#### Fields
-
-- `request_id` (`str`): The ID of the request.
-- `timestamp` (`datetime`): The timestamp of the request.
-- `model_name` (`str`): The name of the model.
-- `model_provider` (`str`): The provider of the model.
-- `input_tokens` (`int`): The number of input tokens.
-- `output_tokens` (`int`): The number of output tokens.
-- `total_cost` (`float`): The total cost in USD.
-- `status` (`str`): The status of the request.
-- `error_message` (`Optional[str]`): The error message, if any.
-
-### RequestDetails
-
-The `RequestDetails` class represents detailed information about a specific request.
-
-```python
-class RequestDetails(BaseModel):
-    """Detailed information about a specific request."""
-    request_id: str
-    timestamp: datetime
-    model_name: str
-    model_provider: str
-    client_id: str
-    user_id: str
-    config_json: str
-    request_raw: str
-    request_json: str
-    response_json: str
-    response_raw: str
-    input_tokens: int
-    output_tokens: int
-    input_cost: float
-    output_cost: float
-    total_cost: float
-    status: str
-    error_message: Optional[str] = None
-```
-
-#### Fields
-
-- `request_id` (`str`): The request ID.
-- `timestamp` (`datetime`): The timestamp of the request.
-- `model_name` (`str`): The name of the model.
-- `model_provider` (`str`): The provider of the model.
-- `client_id` (`str`): The client ID.
-- `user_id` (`str`): The user ID.
-- `config_json` (`str`): The configuration as JSON.
-- `request_raw` (`str`): The raw request.
-- `request_json` (`str`): The request as JSON.
-- `response_json` (`str`): The response as JSON.
-- `response_raw` (`str`): The raw response.
-- `input_tokens` (`int`): The number of input tokens.
-- `output_tokens` (`int`): The number of output tokens.
-- `input_cost` (`float`): The cost of input tokens.
-- `output_cost` (`float`): The cost of output tokens.
-- `total_cost` (`float`): The total cost.
-- `status` (`str`): The status of the request.
-- `error_message` (`Optional[str]`): The error message, if any.
+1. Always provide `client_id` and `user_id` for accurate tracking
+2. Monitor usage regularly using `get_usage_stats()`
+3. Set appropriate budget limits for your use case
+4. Use the CLI tools to analyze detailed usage patterns
+5. Handle `BudgetExceeded` exceptions gracefully

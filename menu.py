@@ -2,8 +2,7 @@
 import subprocess
 from pathlib import Path
 from typing import Optional
-import tomli  # Better TOML reading
-import tomli_w  # Better TOML writing
+import configparser
 
 import questionary
 import semver
@@ -54,20 +53,20 @@ class DeployManager:
         }
 
     def _get_package_name(self) -> str:
-        """Get package name from pyproject.toml."""
-        pyproject_toml = self.root_dir / "pyproject.toml"
+        """Get package name from setup.cfg."""
+        setup_cfg = self.root_dir / "setup.cfg"
 
         try:
-            with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
-                pyproject_data = tomli.load(f)
+            config = configparser.ConfigParser()
+            config.read(setup_cfg)
 
-            package_name = pyproject_data.get("tool", {}).get("poetry", {}).get("name")
+            package_name = config.get("metadata", "name")
             if not package_name:
-                raise ValueError("Package name not found in pyproject.toml")
+                raise ValueError("Package name not found in setup.cfg")
 
             return package_name
         except Exception as e:
-            raise ValueError(f"Error reading package name from pyproject.toml: {e}")
+            raise ValueError(f"Error reading package name from setup.cfg: {e}")
 
     def run_command(
         self, command: str, description: str = "", check: bool = True
@@ -322,27 +321,30 @@ class DeployManager:
         try:
             # Parse current version
             ver = semver.Version.parse(current_version)
+            print(f"\n📦 Current version: {current_version}")
 
-            # Check if it's a beta version
-            if ver.prerelease and str(ver.prerelease).startswith('beta'):
-                prerelease = str(ver.prerelease)
-                # If it has a number after beta (beta.N), increment N
-                if '.' in prerelease:
-                    prefix, number = prerelease.split('.')
-                    if number.isdigit():
-                        new_prerelease = f"beta.{int(number) + 1}"
-                        ver = semver.Version(
-                            ver.major,
-                            ver.minor,
-                            ver.patch,
-                            prerelease=new_prerelease
-                        )
-                # If it's just 'beta', leave it as is
+            # Always show version type selection
+            increment_type = questionary.select(
+                "Select version increment type:",
+                choices=["patch", "minor", "major"],
+                default="patch"
+            ).ask()
+
+            # If it's a prerelease version, increment the prerelease number
+            if ver.prerelease:
+                prefix = str(ver.prerelease).split('.')[0]
+                number = int(str(ver.prerelease).split('.')[1])
+                new_version = f"{ver.major}.{ver.minor}.{ver.patch}-{prefix}.{number + 1}"
             else:
-                # For stable versions, increment patch number
-                ver = ver.bump_patch()
+                # For stable versions, increment version number
+                if increment_type == "patch":
+                    ver = ver.bump_patch()
+                elif increment_type == "minor":
+                    ver = ver.bump_minor()
+                elif increment_type == "major":
+                    ver = ver.bump_major()
+                new_version = str(ver)
 
-            new_version = str(ver)
             self._update_version_in_files(new_version)
             print(f"✅ Version updated: {current_version} → {new_version}")
             return True
@@ -352,44 +354,44 @@ class DeployManager:
             return False
 
     def _get_current_version(self) -> Optional[str]:
-        """Get current package version from pyproject.toml."""
-        pyproject_toml = self.root_dir / "pyproject.toml"
-        if not pyproject_toml.exists():
-            print("❌ pyproject.toml not found")
+        """Get current package version from setup.cfg."""
+        setup_cfg = self.root_dir / "setup.cfg"
+        if not setup_cfg.exists():
+            print("❌ setup.cfg not found")
             return None
 
         try:
-            with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
-                pyproject_data = tomli.load(f)
+            config = configparser.ConfigParser()
+            config.read(setup_cfg)
 
-            version = pyproject_data.get("tool", {}).get("poetry", {}).get("version")
+            version = config.get("metadata", "version")
             if not version:
-                print("❌ Version not found in pyproject.toml")
+                print("❌ Version not found in setup.cfg")
                 return None
 
             return version
         except Exception as e:
-            print(f"❌ Error reading pyproject.toml: {e}")
+            print(f"❌ Error reading setup.cfg: {e}")
             return None
 
     def _update_version_in_files(self, new_version: str) -> None:
         """Update version in configuration files."""
         module_name = self.package_name
-        pyproject_toml = self.root_dir / "pyproject.toml"
+        setup_cfg = self.root_dir / "setup.cfg"
 
-        # Update pyproject.toml
-        if pyproject_toml.exists():
+        # Update setup.cfg
+        if setup_cfg.exists():
             try:
-                with open(pyproject_toml, "rb") as f:  # Open in binary mode for tomli
-                    pyproject_data = tomli.load(f)
+                config = configparser.ConfigParser()
+                config.read(setup_cfg)
 
-                if "tool" in pyproject_data and "poetry" in pyproject_data["tool"]:
-                    pyproject_data["tool"]["poetry"]["version"] = new_version
+                if "metadata" in config:
+                    config["metadata"]["version"] = new_version
 
-                    with open(pyproject_toml, "wb") as f:  # Open in binary mode for tomli-w
-                        tomli_w.dump(pyproject_data, f)
+                    with open(setup_cfg, "w") as f:
+                        config.write(f)
             except Exception as e:
-                print(f"❌ Error updating pyproject.toml: {e}")
+                print(f"❌ Error updating setup.cfg: {e}")
 
         # Update version in __init__.py if it exists
         init_path = self.root_dir / "src" / module_name / "__init__.py"

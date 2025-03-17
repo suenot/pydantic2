@@ -1,200 +1,254 @@
-![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
-
 # Pydantic2 🚀
 
-A powerful AI framework with structured Pydantic response handling, LLM integration, and advanced agent capabilities.
+A powerful Python framework for building AI applications with structured responses, powered by Pydantic AI and OpenRouter.
+
+![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
+
 
 [![Documentation](https://img.shields.io/badge/docs-pydantic.unrealos.com-blue)](https://pydantic.unrealos.com)
 [![PyPI version](https://badge.fury.io/py/pydantic2.svg)](https://badge.fury.io/py/pydantic2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-### 🔒 Security & Safety
 [![Security Policy](https://img.shields.io/badge/Security-Policy-blue)](https://github.com/markolofsen/pydantic2/security/policy)
 [![PyUp Safety](https://pyup.io/repos/github/markolofsen/pydantic2/shield.svg)](https://pyup.io/repos/github/markolofsen/pydantic2/)
 [![Known Vulnerabilities](https://snyk.io/test/github/markolofsen/pydantic2/badge.svg)](https://snyk.io/test/github/markolofsen/pydantic2)
 [![GitGuardian scan](https://img.shields.io/badge/Secrets%20Scan-GitGuardian-orange)](https://www.gitguardian.com/)
 
-## Overview 🔍
 
-Pydantic2 provides **typesafe, structured responses** from LLMs through Pydantic models. It simplifies working with language models while ensuring type safety and data validation.
+## Features 🌟
 
-### Key Features ✨
+- **🔒 Type-Safe Responses**: Built on Pydantic AI for robust type validation
+- **🌐 Online Search**: Real-time internet access for up-to-date information
+- **💰 Budget Control**: Built-in cost tracking and budget management
+- **📊 Usage Monitoring**: Detailed token and cost tracking
+- **🔄 Async Support**: Both sync and async interfaces
+- **🛡️ Error Handling**: Comprehensive exception system
+- **🎨 Colored Logging**: Beautiful console output with detailed logs
+- **🔍 Database Viewer**: Built-in CLI tools to inspect models and usage databases
 
-- **[Structured Responses](https://pydantic.unrealos.com/guides/structured-responses)** ✅
-  - Type-safe responses using Pydantic models
-  - Automatic validation and parsing
-  - IDE support with autocompletion
-  - Custom response models with field descriptions
-  - Nested model support
+---
 
-- **[LLM Integration](https://pydantic.unrealos.com/api/client)** 🔌
-  - Support for multiple LLM providers
-  - Unified API for all models
-  - Easy provider switching
-  - Automatic retries and fallbacks
-  - Streaming support
-
-- **[Budget Control](https://pydantic.unrealos.com/guides/budget-management)** 💰
-  - Built-in cost tracking
-  - Budget limits per request/user
-  - Usage statistics and analytics
-  - Cost estimation before requests
-  - Detailed usage reports
-
-- **[Message Handling](https://pydantic.unrealos.com/guides/message-handling)** 📝
-  - System and user messages
-  - Conversation history
-  - Structured data support
-  - Support for code blocks
-  - Support for JSON and DataFrame inputs
-
-- **[Agent System](https://pydantic.unrealos.com/api/agents)** 🛠️
-  - Custom tools and functions
-  - Gradio UI integration
-  - Extensible framework
-  - Tool decorators
-  - Memory management
-
-### Tech Stack 🔋
-
-- **[Pydantic](https://docs.pydantic.dev/)**: Type-safe data handling
-- **[LiteLLM](https://litellm.ai/)**: Core LLM routing
-- **[Instructor](https://github.com/jxnl/instructor)**: Structured outputs
-- **[OpenRouter](https://openrouter.ai/)**: Default model provider
-- **[SmoLAgents](https://github.com/smol-ai/smol-agents)**: Agent functionality
-
-## [Installation](https://pydantic.unrealos.com/getting-started/installation) 📦
+## Installation 📦
 
 ```bash
 pip install pydantic2
 ```
 
-Set up your API key:
+Set your API key:
 ```bash
 export OPENROUTER_API_KEY=your_api_key_here
 ```
 
-## [Quick Start](https://pydantic.unrealos.com/getting-started/quick-start) ⚡
+## Quick Start ⚡
 
-### Basic Example
+```python
+from typing import List
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+
+
+class ChatResponse(BaseModel):
+    """Response format for chat messages."""
+    message: str = Field(description="The chat response message")
+    sources: List[str] = Field(default_factory=list, description="Sources used in the response")
+    confidence: float = Field(ge=0, le=1, description="Confidence score of the response")
+
+
+def main():
+    # Initialize client with usage tracking using context manager
+    with PydanticAIClient(
+        model_name="openai/gpt-4o-mini-2024-07-18",
+        client_id="test_client",
+        user_id="test_user",
+        verbose=False,
+        retries=3,
+        online=True,
+        # max_budget=0.0003
+    ) as client:
+        try:
+            # Set up the conversation with system message
+            client.message_handler.add_message_system(
+                "You are a helpful AI assistant. Be concise but informative."
+            )
+
+            # Add user message
+            client.message_handler.add_message_user("What is the capital of France?")
+
+            # Add structured data block (optional)
+            client.message_handler.add_message_block(
+                "CONTEXT",
+                {
+                    "topic": "Geography",
+                    "region": "Europe",
+                    "country": "France"
+                }
+            )
+
+            # Generate response (synchronously)
+            response: ChatResponse = client.generate(
+                result_type=ChatResponse
+            )
+
+            # Print the response
+            print("\nAI Response:")
+            print(response.model_dump_json(indent=2))
+
+            # Print usage statistics
+            stats = client.get_usage_stats()
+            if stats:
+                print("\nUsage Statistics:")
+                print(f"Total Requests: {stats.get('total_requests', 0)}")
+                print(f"Total Cost: ${stats.get('total_cost', 0):.4f}")
+
+        except Exception as e:
+            print(f"\nError: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+## CLI Tools 🔍
+
+Pydantic2 stores model information and usage statistics in SQLite databases. To help you interact with these databases, the library includes built-in CLI tools:
+
+```bash
+# View models database in browser (http://localhost:8001)
+pydantic2 --view-models
+
+# View usage database in browser (http://localhost:8002)
+pydantic2 --view-usage
+
+# View both databases simultaneously
+pydantic2 --view-all
+
+# Show CLI help
+pydantic2 --help
+```
+
+The databases are automatically created and maintained as you use the library:
+
+1. **Models Database**: Stores information about models, parameters, and capabilities
+2. **Usage Database**: Tracks requests, tokens, costs, and usage statistics
+
+---
+
+## Key Features 🔑
+
+### Type-Safe Responses
 
 ```python
 from pydantic import BaseModel, Field
 from typing import List
-from pydantic2 import LiteLLMClient, Request
 
-class MovieReview(BaseModel):
-    title: str = Field(description="The title of the movie")
-    rating: float = Field(description="The rating of the movie")
-    pros: List[str] = Field(description="The pros of the movie")
-    cons: List[str] = Field(description="The cons of the movie")
-
-client = LiteLLMClient(Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=MovieReview
-))
-
-response = client.generate_response(
-    prompt="Review the movie 'Inception'"
-)
-
-print(f"Title: {response.title}")
-print(f"Rating: {response.rating}/5")
-print("Pros:", ", ".join(response.pros))
-print("Cons:", ", ".join(response.cons))
+class Analysis(BaseModel):
+    summary: str = Field(description="Brief summary")
+    key_points: List[str] = Field(description="Main points")
+    sentiment: float = Field(ge=-1, le=1, description="Sentiment score")
 ```
 
-### [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
+### Online Search Mode
 
 ```python
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from pydantic import BaseModel, Field
-from typing import List
-from pydantic2 import Request, LiteLLMClient
-
-class FeedbackAnalysis(BaseModel):
-    summary: str = Field(..., description="Summary of the feedback")
-    sentiment: str = Field(..., description="Detected sentiment")
-    key_points: List[str] = Field(..., description="Key points from the feedback")
-
-class FeedbackView(APIView):
-    def post(self, request):
-        feedback = request.data.get('feedback', '')
-
-        client = LiteLLMClient(Request(
-            model="openrouter/openai/gpt-4o-mini-2024-07-18",
-            answer_model=FeedbackAnalysis,
-            max_budget=0.01,
-            user_id=request.user.id
-        ))
-
-        response = client.generate_response(prompt=feedback)
-        return Response(response.model_dump())
-```
-
-## [Configuration](https://pydantic.unrealos.com/getting-started/configuration) 🔧
-
-```python
-from pydantic2 import Request
-
-config = Request(
-    # Model settings
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourModel,
-    temperature=0.7,
-    max_tokens=500,
-
-    # Performance features
-    online=True,
-    cache_prompt=True,
-    max_budget=0.05,
-
-    # User tracking
-    user_id="user123",
-    client_id="my_app"
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    online=True  # Enables real-time internet access
 )
 ```
 
-## Documentation 📚
+### Budget Management
 
-Full documentation is available at [https://pydantic.unrealos.com](https://pydantic.unrealos.com)
+```python
+client = PydanticAIClient(
+    max_budget=1.0,  # Set $1 limit
+    verbose=True     # See detailed cost tracking
+)
 
-### Key Topics
+try:
+    response = client.generate(...)
+except BudgetExceeded as e:
+    print(f"Budget exceeded: ${e.current_cost:.4f} / ${e.budget_limit:.4f}")
+```
 
-- **Getting Started**
-  - [Installation](https://pydantic.unrealos.com/getting-started/installation)
-  - [Quick Start Guide](https://pydantic.unrealos.com/getting-started/quick-start)
-  - [Configuration](https://pydantic.unrealos.com/getting-started/configuration)
+### Async Support
 
-- **Guides**
-  - [Message Handling](https://pydantic.unrealos.com/guides/message-handling)
-  - [Budget Management](https://pydantic.unrealos.com/guides/budget-management)
-  - [Structured Responses](https://pydantic.unrealos.com/guides/structured-responses)
-  - [Usage Tracking](https://pydantic.unrealos.com/guides/usage-tracking)
+```python
+async def get_analysis():
+    async with PydanticAIClient() as client:
+        return await client.generate_async(
+            result_type=Analysis,
+            user_prompt="Analyze this text..."
+        )
+```
 
-- **Examples**
-  - [Basic Usage](https://pydantic.unrealos.com/examples/basic-usage)
-  - [Django Integration](https://pydantic.unrealos.com/examples/django-integration)
-  - [FastAPI Integration](https://pydantic.unrealos.com/examples/fastapi-integration)
-  - [Agent System](https://pydantic.unrealos.com/examples/agent-system)
+### Error Handling
 
-- **API Reference**
-  - [Client](https://pydantic.unrealos.com/api/client)
-  - [Models](https://pydantic.unrealos.com/api/models)
-  - [Usage](https://pydantic.unrealos.com/api/usage)
-  - [Agents](https://pydantic.unrealos.com/api/agents)
+```python
+from pydantic2.client.exceptions import (
+    BudgetExceeded, ValidationError, NetworkError, PydanticAIError
+)
 
-## Why Pydantic2? 🤔
+try:
+    response = client.generate(...)
+except BudgetExceeded as e:
+    print(f"Budget limit reached: ${e.budget_limit:.4f}")
+except ValidationError as e:
+    print(f"Invalid response format: {e.errors}")
+except NetworkError as e:
+    print(f"Network error ({e.status_code}): {e.message}")
+except PydanticAIError as e:
+    print(f"Other error: {e}")
+```
 
-- **[Type Safety](https://pydantic.unrealos.com/guides/structured-responses)**: Get structured responses with proper type hints and validation
-- **Efficiency**: Reduce boilerplate code and focus on your application logic
-- **[Reliability](https://pydantic.unrealos.com/guides/usage-tracking)**: Production-tested with comprehensive error handling
-- **[Flexibility](https://pydantic.unrealos.com/api/client)**: Support for multiple LLM providers and frameworks
-- **[Scalability](https://pydantic.unrealos.com/guides/budget-management)**: Built for both small projects and enterprise applications
-- **[Cost Control](https://pydantic.unrealos.com/guides/budget-management)**: Built-in budget management and usage tracking
-- **Framework Support**: Seamless integration with [Django](https://pydantic.unrealos.com/examples/django-integration), [FastAPI](https://pydantic.unrealos.com/examples/fastapi-integration), and more
-- **[Developer Experience](https://pydantic.unrealos.com/getting-started/quick-start)**: Great IDE support and documentation
+### Usage Tracking
+
+```python
+stats = client.get_usage_stats()
+print(f"Total Requests: {stats['total_requests']}")
+print(f"Total Tokens: {stats['total_tokens']}")
+print(f"Total Cost: ${stats['total_cost']:.4f}")
+```
+
+---
+
+## Advanced Usage 🔧
+
+### Custom Response Models
+
+```python
+class ProductAnalysis(BaseModel):
+    name: str = Field(description="Product name")
+    pros: List[str] = Field(description="Advantages")
+    cons: List[str] = Field(description="Disadvantages")
+    rating: float = Field(ge=0, le=10, description="Overall rating")
+    recommendation: str = Field(description="Buy/Hold/Sell recommendation")
+
+client = PydanticAIClient(online=True)
+analysis = client.generate(
+    result_type=ProductAnalysis,
+    user_prompt="Analyze the latest iPhone"
+)
+```
+
+### Message Handling
+
+```python
+# Add system context
+client.message_handler.add_message_system(
+    "You are a professional product analyst."
+)
+
+# Add user message
+client.message_handler.add_message_user(
+    "What are the pros and cons of Product X?"
+)
+
+# Generate structured response
+response = client.generate(result_type=ProductAnalysis)
+```
+
+---
 
 ## Support & Community 👥
 

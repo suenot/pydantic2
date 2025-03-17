@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
-from src.pydantic2 import PydanticAIClient
+from src.pydantic2 import PydanticAIClient, ModelSettings
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -23,7 +23,13 @@ def main():
         verbose=False,
         retries=3,
         online=True,
-        # max_budget=0.0003
+        max_budget=1,
+        model_settings=ModelSettings(
+            max_tokens=1000,
+            temperature=0.7,
+            top_p=1,
+            frequency_penalty=0,
+        )
     ) as client:
         try:
             # Set up the conversation with system message

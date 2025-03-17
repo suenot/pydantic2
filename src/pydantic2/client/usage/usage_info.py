@@ -12,7 +12,7 @@ from ...utils.logger import logger
 THIS_DIR = Path(__file__).parent.parent.parent
 DB_DIR = THIS_DIR / 'db'
 DB_DIR.mkdir(parents=True, exist_ok=True)
-DEFAULT_DB_PATH = DB_DIR / "usage_info.db"
+DEFAULT_DB_PATH = DB_DIR / "usage.db"
 
 db = SqliteDatabase(DEFAULT_DB_PATH)
 

@@ -1,134 +1,114 @@
 # Configuration
 
-Pydantic2 provides a flexible configuration system through the `Request` class. This guide covers all the available configuration options and how to use them.
+Learn how to configure the Pydantic2 client for your needs.
 
-## Basic Configuration
-
-Here's a basic example of configuring a request:
+## Quick Start
 
 ```python
-from pydantic2 import Request
-from your_app.models import YourResponseModel
+from pydantic2 import PydanticAIClient, ModelSettings
 
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourResponseModel,
-    temperature=0.7,
-    max_tokens=500
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",  # Required: Model identifier
+    client_id="my_app",               # Required for usage tracking
+    user_id="user123"                 # Required for usage tracking
 )
 ```
 
-## All Configuration Options
+## Configuration Parameters
 
-The `Request` class accepts the following parameters:
+### Essential Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `model_name` | str | Yes | Model identifier (e.g., "openai/gpt-4o-mini") |
+| `client_id` | str | Yes | Your application identifier |
+| `user_id` | str | Yes | End-user identifier |
+| `api_key` | str | No* | OpenRouter API key (can be set via env var) |
+
+*API key can be set via `OPENROUTER_API_KEY` environment variable
+
+### Optional Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `base_url` | str | "https://openrouter.ai/api/v1" | API endpoint |
+| `verbose` | bool | False | Enable detailed logging |
+| `retries` | int | 3 | Number of retry attempts |
+| `online` | bool | False | Enable internet access |
+| `max_budget` | float | None | Maximum budget in USD |
 
 ### Model Settings
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `model` | `str` | `"openrouter/openai/gpt-4o-mini-2024-07-18"` | Model identifier |
-| `answer_model` | `Type[BaseModel]` | Required | Pydantic model for responses |
-| `temperature` | `float` | `0.7` | Response randomness (0.0-1.0) |
-| `max_tokens` | `int` | `500` | Maximum response length |
-| `top_p` | `float` | `1.0` | Nucleus sampling parameter |
-| `frequency_penalty` | `float` | `0.0` | Penalty for token frequency |
-| `presence_penalty` | `float` | `0.0` | Penalty for token presence |
-
-### Performance Features
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `online` | `bool` | `False` | Enable web search |
-| `cache_prompt` | `bool` | `True` | Cache identical prompts |
-| `max_budget` | `float` | `0.05` | Maximum cost per request in USD |
-| `timeout` | `int` | `60` | Request timeout in seconds |
-
-### User Tracking
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `user_id` | `str` | `None` | User identifier for budget tracking |
-| `client_id` | `str` | `"default"` | Client identifier for usage tracking |
-
-### Debug Options
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `verbose` | `bool` | `False` | Detailed output |
-| `logs` | `bool` | `False` | Enable logging |
-
-## Configuration Examples
-
-### Basic Configuration
+Configure model behavior using `ModelSettings`:
 
 ```python
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourResponseModel
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",
+    model_settings=ModelSettings(
+        max_tokens=100,        # Maximum response length
+        temperature=0.7,       # Response randomness (0-1)
+        top_p=1.0,            # Nucleus sampling parameter
+        frequency_penalty=0.0  # Penalty for repetition
+    )
 )
 ```
 
-### Advanced Configuration
+## Usage Tracking
+
+### Understanding Identifiers
+
+- **client_id**: Identifies your application
+  ```python
+  client_id="my_trading_bot"  # Tracks usage per application
+  ```
+
+- **user_id**: Identifies end-users
+  ```python
+  user_id="user123"  # Tracks usage per user
+  ```
+
+Both identifiers are required for usage tracking and budget management.
+
+### Usage Statistics
 
 ```python
-config = Request(
-    # Model settings
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourResponseModel,
-    temperature=0.5,
-    max_tokens=1000,
-    top_p=0.9,
-    frequency_penalty=0.2,
-    presence_penalty=0.2,
+# Get overall stats
+stats = client.get_usage_stats()
+print(f"Total cost: ${stats['total_cost']:.4f}")
 
-    # Performance features
-    online=True,
-    cache_prompt=True,
-    max_budget=0.1,
-    timeout=120,
-
-    # User tracking
-    user_id="user123",
-    client_id="my_app",
-
-    # Debug options
-    verbose=True,
-    logs=True
-)
+# Get user-specific stats
+user_stats = client.get_usage_stats(user_id="user123")
+print(f"User cost: ${user_stats['total_cost']:.4f}")
 ```
 
-### Configuration for Production
+## Environment Variables
 
-```python
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourResponseModel,
-    temperature=0.3,  # Lower temperature for more deterministic responses
-    max_tokens=500,
-    cache_prompt=True,  # Enable caching for better performance
-    max_budget=0.05,  # Set a budget limit
-    timeout=30,  # Shorter timeout for production
-    verbose=False,  # Disable verbose output
-    logs=True  # Keep logs enabled for debugging
-)
+```bash
+# Set common configuration values
+export OPENROUTER_API_KEY="your-api-key"
+export PYDANTIC_CLIENT_ID="my_app"
+export PYDANTIC_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
-### Configuration for Development
+## Message Handling
+
+For detailed information about building conversations and managing messages, see the [Message Handling](../core-concepts/message-handling.md) guide.
+
+## Error Handling
 
 ```python
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=YourResponseModel,
-    temperature=0.7,  # Higher temperature for more creative responses
-    max_tokens=1000,  # More tokens for longer responses
-    cache_prompt=False,  # Disable caching for testing
-    max_budget=0.1,  # Higher budget for testing
-    timeout=60,  # Longer timeout for debugging
-    verbose=True,  # Enable verbose output
-    logs=True  # Enable logs
-)
+from pydantic2.client.exceptions import BudgetExceeded, NetworkError
+
+try:
+    response: MyModel = client.generate(result_type=MyModel)
+except BudgetExceeded as e:
+    print(f"Budget exceeded: ${e.current_cost:.4f} / ${e.budget_limit:.4f}")
+except NetworkError as e:
+    print(f"Network error: {e.message}")
 ```
 
 ## Next Steps
 
-Now that you understand how to configure Pydantic2, check out the [Message Handling](../guides/message-handling.md) guide to learn how to work with messages.
+- Try [Basic Usage Examples](../examples/basic-usage.md)
+- Learn about [Budget Management](../core-concepts/budget-management.md)
+- Explore [Error Handling](../core-concepts/error-handling.md)

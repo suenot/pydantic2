@@ -1,146 +1,160 @@
-# Quick Start
+# Quick Start Guide
 
-This guide will help you get started with Pydantic2 quickly. We'll cover the basics of setting up a client, defining a response model, and generating a response.
+This guide will help you get started with Pydantic2 in just a few minutes.
 
-## Basic Example
+## Installation
 
-Here's a simple example that demonstrates the core functionality of Pydantic2:
+First, install the package from PyPI:
+
+```bash
+pip install pydantic2
+```
+
+## Set Up API Keys
+
+For most LLM providers, you'll need to set up API keys. You can use environment variables:
+
+```bash
+export OPENROUTER_API_KEY=your_api_key_here
+```
+
+## Basic Usage
+
+Here's a complete example that demonstrates the core functionality:
+
+```python
+from typing import List
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient
+
+class ChatResponse(BaseModel):
+    """Response format for chat messages."""
+    message: str = Field(description="The chat response message")
+    sources: List[str] = Field(default_factory=list, description="Sources used in the response")
+    confidence: float = Field(ge=0, le=1, description="Confidence score of the response")
+
+
+def main():
+    # Initialize client with usage tracking using context manager
+    with PydanticAIClient(
+        model_name="openai/gpt-4o-mini-2024-07-18",
+        client_id="test_client",
+        user_id="test_user",
+        verbose=False,
+        retries=3,
+        online=True,
+        # max_budget=0.0003
+    ) as client:
+        try:
+            # Set up the conversation with system message
+            client.message_handler.add_message_system(
+                "You are a helpful AI assistant. Be concise but informative."
+            )
+
+            # Add user message
+            client.message_handler.add_message_user(
+                "What is the capital of France?"
+            )
+
+            # Add structured data block (optional)
+            client.message_handler.add_message_block(
+                "CONTEXT",
+                {
+                    "topic": "Geography",
+                    "region": "Europe",
+                    "country": "France"
+                }
+            )
+
+            # Generate response
+            response: ChatResponse = client.generate(
+                result_type=ChatResponse
+            )
+
+            # Print the response
+            print("\nAI Response:")
+            print(response.model_dump_json(indent=2))
+
+            # Print usage statistics
+            stats = client.get_usage_stats()
+            if stats:
+                print("\nUsage Statistics:")
+                print(f"Total Requests: {stats.get('total_requests', 0)}")
+                print(f"Total Cost: ${stats.get('total_cost', 0):.4f}")
+
+        except Exception as e:
+            print(f"\nError: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Key Components
+
+### Response Models
+
+Define structured output with Pydantic models:
 
 ```python
 from pydantic import BaseModel, Field
 from typing import List
-import json
 
-from pydantic2 import LiteLLMClient, Request
-
-
-# Define a custom response model
-class UserDetail(BaseModel):
-    """Model for extracting user details from text."""
-    name: str = Field(description="The user's name")
-    age: int = Field(description="The user's age")
-    interests: List[str] = Field(description="List of user's interests")
-
-
-# Create a request configuration
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",  # Model identifier
-    temperature=0.7,                                   # Response randomness
-    max_tokens=500,                                    # Maximum response length
-    answer_model=UserDetail,                           # Pydantic model for responses
-    verbose=True                                       # Show detailed output
-)
-
-# Initialize the client
-client = LiteLLMClient(config)
-
-# Add a message to the conversation
-client.msg.add_message_user("Describe who is David Copperfield")
-
-# Generate a response
-response: UserDetail = client.generate_response()
-
-# Print the structured response
-print(json.dumps(response.model_dump(), indent=2))
+class Analysis(BaseModel):
+    summary: str = Field(description="Brief summary")
+    key_points: List[str] = Field(description="Main points")
+    sentiment: float = Field(ge=-1, le=1, description="Sentiment score")
 ```
 
-## Step-by-Step Explanation
-
-### 1. Define a Response Model
-
-First, define a Pydantic model that represents the structure of the response you want:
+### Client Initialization
 
 ```python
-from pydantic import BaseModel, Field
-from typing import List
-
-class UserDetail(BaseModel):
-    """Model for extracting user details from text."""
-    name: str = Field(description="The user's name")
-    age: int = Field(description="The user's age")
-    interests: List[str] = Field(description="List of user's interests")
-```
-
-The model should inherit from `BaseModel` and define the fields you want to extract. Each field should have a type annotation and a description.
-
-### 2. Configure the Request
-
-Next, create a `Request` object with your desired configuration:
-
-```python
-from pydantic2 import Request
-
-config = Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",  # Model identifier
-    temperature=0.7,                                   # Response randomness
-    max_tokens=500,                                    # Maximum response length
-    answer_model=UserDetail,                           # Pydantic model for responses
-    verbose=True                                       # Show detailed output
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini",  # Model to use
+    online=True,                       # Enable internet access
+    verbose=True,                      # Show detailed logs
+    retries=3,                         # Auto-retry on failures
+    max_budget=1.0                     # Set budget limit (in USD)
 )
 ```
 
-Key parameters:
-- `model`: The identifier of the LLM model to use
-- `answer_model`: Your Pydantic model for structured responses
-- `temperature`: Controls randomness (0.0-1.0)
-- `max_tokens`: Maximum length of the response
-- `verbose`: Whether to show detailed output
-
-### 3. Initialize the Client
-
-Create a `LiteLLMClient` with your configuration:
+### Message Handling
 
 ```python
-from pydantic2 import LiteLLMClient
+# Add system context
+client.message_handler.add_message_system(
+    "You are a helpful AI assistant with expertise in programming."
+)
 
-client = LiteLLMClient(config)
+# Add user message
+client.message_handler.add_message_user(
+    "Can you explain how async/await works in Python?"
+)
+
+# Add structured data
+client.message_handler.add_message_block(
+    "CODE_EXAMPLE",
+    {
+        "language": "python",
+        "code": "async def fetch_data():\n    result = await api_call()\n    return result"
+    }
+)
 ```
 
-### 4. Add Messages
-
-Add messages to the conversation:
+### Generate Responses
 
 ```python
-client.msg.add_message_user("Describe who is David Copperfield")
-```
+# Synchronous generation
+response: Analysis = client.generate(result_type=Analysis)
 
-You can add different types of messages:
-- `add_message_user()`: Add a user message
-- `add_message_system()`: Add a system message
-- `add_message_assistant()`: Add an assistant message
-- `add_message_block()`: Add a block message with a tag
-
-### 5. Generate a Response
-
-Generate a response and get it in your structured format:
-
-```python
-response: UserDetail = client.generate_response()
-```
-
-The response will be an instance of your Pydantic model.
-
-### 6. Use the Response
-
-You can access the fields of the response directly:
-
-```python
-print(f"Name: {response.name}")
-print(f"Age: {response.age}")
-print(f"Interests: {', '.join(response.interests)}")
-```
-
-Or convert it to a dictionary or JSON:
-
-```python
-# Convert to dictionary
-response_dict = response.model_dump()
-
-# Convert to JSON
-response_json = response.model_dump_json(indent=2)
-print(response_json)
+# Asynchronous generation
+async def get_analysis():
+    async with PydanticAIClient() as client:
+        return await client.generate_async(result_type=Analysis)
 ```
 
 ## Next Steps
 
-Now that you've seen the basics, check out the [Configuration](configuration.md) guide to learn more about the available configuration options.
+- Check out the [Error Handling](../core-concepts/error-handling.md) guide
+- Learn about [Budget Management](../core-concepts/budget-management.md)
+- Explore [CLI Tools](../cli.md) for database viewing

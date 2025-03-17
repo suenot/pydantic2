@@ -6,24 +6,24 @@ pytest-cov
 flake8
 black
 isort
-pip-audit
-safety
-tomli
-tomli-w
 questionary
 semver
+pip-audit
+safety
 
 # Runtime dependencies
-pydantic
 pydantic-ai
 colorlog
 pyyaml
 peewee
 beautifulsoup4
-python-dotenv
+click
+aiohttp
 
 # Documentation
 mkdocs
 mkdocs-material
 mkdocstrings[python]
 mkdocs-minify-plugin
+mkdocs-git-revision-date-localized-plugin
+mkdocs-material[imaging]

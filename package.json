@@ -4,8 +4,18 @@
     "scripts": {
         "commit": "npx openrouter-commit -run",
         "commit2": "git add . && git commit -m 'fixes' && git push --set-upstream origin pydantic2.1-beta",
-        "build": "mkdocs build -f www/mkdocs.yml",
-        "serve": "mkdocs serve -f www/mkdocs.yml"
+        "docs:build": "mkdocs build -f www/mkdocs.yml",
+        "docs:serve": "mkdocs serve -f www/mkdocs.yml",
+        "tests": "pytest tests/ -v",
+        "format": "black . && isort . && flake8 --ignore E203",
+        "install": "pip install -r requirements.txt && pip install -e .",
+        "audit": "pip-audit --group-by=package --group-by-file --ignore=CVE-2024-18266",
+        "lint": "flake8 --ignore E203",
+        "sort": "isort .",
+        "cli:view-models": "pydantic2 --view-models",
+        "cli:view-usage": "pydantic2 --view-usage",
+        "cli:view-all": "pydantic2 --view-all",
+        "cli:help": "pydantic2 --help"
     },
     "devDependencies": {
         "openrouter-commit": "latest"

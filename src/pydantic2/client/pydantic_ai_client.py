@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError as PydanticValidationError
 from pydantic_ai import Agent
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openai import OpenAIModel
@@ -9,19 +9,20 @@ from .message_handler import MessageHandler
 from .usage.usage_info import UsageInfo
 from .usage.model_prices import ModelPriceManager
 from ..utils.logger import logger
+from .exceptions import (
+    BudgetExceeded, ErrorGeneratingResponse, ModelNotFound,
+    InvalidConfiguration, AuthenticationError, RateLimitExceeded,
+    ValidationError, NetworkError
+)
 import os
 from dotenv import load_dotenv
 import time
 import uuid
 import asyncio
+import aiohttp
 
 # Load environment variables
 load_dotenv()
-
-
-class BudgetExceeded(Exception):
-    """Raised when a request would exceed the user's budget limit."""
-    pass
 
 
 class PydanticAIClient:
@@ -41,47 +42,59 @@ class PydanticAIClient:
         model_settings: Optional[ModelSettings] = None,
     ):
         """Initialize the client."""
-        # Set verbose mode for logger
-        logger.set_verbose(verbose)
+        try:
+            # Set verbose mode for logger
+            logger.set_verbose(verbose)
 
-        # Store original model name for price lookups
-        self.base_model_name = model_name.split(':')[0]  # Remove :online suffix if present
+            # Store original model name for price lookups
+            self.base_model_name = model_name.split(':')[0]  # Remove :online suffix if present
 
-        # Add online suffix if needed
-        if online and not model_name.endswith(':online'):
-            model_name = f"{model_name}:online"
-            # Always show bright message for online mode regardless of verbose
-            logger.success("🌐 Online search mode is enabled - AI will use real-time internet data!")
+            # Add online suffix if needed
+            if online and not model_name.endswith(':online'):
+                model_name = f"{model_name}:online"
+                # Always show bright message for online mode regardless of verbose
+                logger.success("🌐 Online search mode is enabled - AI will use real-time internet data!")
 
-        self.model_name = model_name
-        self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
-        if not self.api_key:
-            raise ValueError("API key must be provided or set in OPENROUTER_API_KEY env var")
+            self.model_name = model_name
+            self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
+            if not self.api_key:
+                raise InvalidConfiguration(
+                    "API key must be provided or set in OPENROUTER_API_KEY env var",
+                    "api_key"
+                )
 
-        self.message_handler = MessageHandler()
-        self.usage_info = UsageInfo(client_id, user_id)
-        self.price_manager = ModelPriceManager()
-        self.verbose = verbose
-        self.retries = retries
-        self.user_id = user_id
-        self.max_budget = max_budget
-        self.model_settings = model_settings
+            self.message_handler = MessageHandler()
+            self.usage_info = UsageInfo(client_id, user_id)
+            self.price_manager = ModelPriceManager()
+            self.verbose = verbose
+            self.retries = retries
+            self.user_id = user_id
+            self.max_budget = max_budget
+            self.model_settings = model_settings
 
-        # Force update prices if they haven't been fetched yet
-        logger.debug("Checking model prices...")
-        self.price_manager.update_from_openrouter(force=True)
+            # Force update prices if they haven't been fetched yet
+            logger.debug("Checking model prices...")
+            self.price_manager.update_from_openrouter(force=True)
 
-        self.model = OpenAIModel(
-            model_name,
-            provider=OpenAIProvider(
-                base_url=base_url,
-                api_key=self.api_key,
-            ),
-        )
+            try:
+                self.model = OpenAIModel(
+                    model_name,
+                    provider=OpenAIProvider(
+                        base_url=base_url,
+                        api_key=self.api_key,
+                    ),
+                )
+            except Exception as e:
+                raise ModelNotFound(model_name) from e
 
-        logger.info(f"Initialized PydanticAIClient with model: {model_name}")
-        if max_budget:
-            logger.info(f"Maximum budget set to ${max_budget:.2f}")
+            logger.info(f"Initialized PydanticAIClient with model: {model_name}")
+            if max_budget:
+                logger.info(f"Maximum budget set to ${max_budget:.2f}")
+
+        except Exception as e:
+            if isinstance(e, (InvalidConfiguration, ModelNotFound)):
+                raise
+            raise InvalidConfiguration(str(e)) from e
 
     def clear_messages(self) -> None:
         """Clear all messages in the message handler."""
@@ -128,9 +141,7 @@ class PydanticAIClient:
             logger.debug(f"Current cost: ${current_cost:.4f}, Budget limit: ${self.max_budget:.4f}")
 
             if current_cost >= self.max_budget:
-                error_msg = f"Budget limit of ${self.max_budget:.4f} exceeded (current cost: ${current_cost:.4f})"
-                logger.error(error_msg)
-                raise BudgetExceeded(error_msg)
+                raise BudgetExceeded(current_cost, self.max_budget)
 
     def _log_request(self, request_id: str):
         """Log the request."""
@@ -208,18 +219,51 @@ class PydanticAIClient:
             # Check budget after the response
             self._check_budget()
 
-            return result.data
+            try:
+                # Validate response against the model
+                if not isinstance(result.data, result_type):
+                    result_type.model_validate(result.data)
+                return result.data
+            except PydanticValidationError as e:
+                raise ValidationError(
+                    "Response validation failed",
+                    model=result_type,
+                    errors=e.errors()
+                ) from e
 
-        except Exception as e:
-            if self.verbose:
-                logger.error(f"Error generating response: {str(e)}")
+        except aiohttp.ClientError as e:
+            error = NetworkError(str(e))
             if self.usage_info:
                 self.usage_info.log_error(
-                    error_message=str(e),
+                    error_message=str(error),
                     response_time=time.perf_counter() - start_time,
                     request_id=request_id
                 )
-            raise
+            raise error
+
+        except Exception as e:
+            if isinstance(e, (BudgetExceeded, ValidationError, NetworkError)):
+                raise
+
+            error = ErrorGeneratingResponse(
+                "Failed to generate response",
+                e,
+                {
+                    "request_id": request_id,
+                    "model": self.model_name,
+                    "response_time": time.perf_counter() - start_time
+                }
+            )
+
+            if self.verbose:
+                logger.error(f"Error generating response: {str(error)}")
+            if self.usage_info:
+                self.usage_info.log_error(
+                    error_message=str(error),
+                    response_time=time.perf_counter() - start_time,
+                    request_id=request_id
+                )
+            raise error
 
     def generate(
         self,

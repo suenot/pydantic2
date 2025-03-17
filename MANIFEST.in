@@ -1,0 +1,31 @@
+include LICENSE
+include README.md
+include setup.cfg
+include setup.py
+
+graft src
+prune src/pydantic2/db
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[cod]
+recursive-exclude tests *
+recursive-exclude security_reports *
+recursive-exclude www *
+recursive-exclude assets *
+recursive-exclude .idea *
+recursive-exclude .vscode *
+recursive-exclude .github *
+recursive-exclude dist *
+recursive-exclude build *
+recursive-exclude *.egg-info *
+
+exclude .gitignore
+exclude .env
+exclude *.swp
+exclude *.swo
+exclude *~
+exclude .DS_Store
+exclude vercel.json
+exclude menu.py
+exclude requirements.txt
+exclude .safety-project.ini

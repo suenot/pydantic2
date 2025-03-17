@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json
 import requests
-import os
 from typing import Optional
 from peewee import (
     Model, SqliteDatabase, CharField, IntegerField,
@@ -14,7 +13,7 @@ from ...utils.logger import logger
 THIS_DIR = Path(__file__).parent.parent.parent
 DB_DIR = THIS_DIR / 'db'
 DB_DIR.mkdir(parents=True, exist_ok=True)
-DB_PATH = DB_DIR / "model_prices.db"
+DB_PATH = DB_DIR / "models.db"
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/models"
 
@@ -123,17 +122,8 @@ class ModelPriceManager:
                 status='in_progress'
             )
 
-            # Get API key from environment
-            api_key = os.getenv("OPENROUTER_API_KEY")
-            if not api_key:
-                raise ValueError("OPENROUTER_API_KEY environment variable is required")
-
             # Fetch models from OpenRouter API
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "HTTP-Referer": "https://github.com/BerriAI/litellm",
-                "X-Title": "LiteLLM"
-            }
+            headers = {}
 
             response = requests.get(OPENROUTER_API_URL, headers=headers)
             response.raise_for_status()

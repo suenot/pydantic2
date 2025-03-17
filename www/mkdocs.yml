@@ -1,22 +1,68 @@
 site_name: Pydantic2
-site_description: A powerful library for structured LLM responses with Pydantic models
-site_author: Mark Olofsen
+site_description: A powerful Python framework for building AI applications with structured responses powered by Pydantic AI
+site_url: https://pydantic.unrealos.com
 repo_url: https://github.com/markolofsen/pydantic2
 repo_name: markolofsen/pydantic2
 
 theme:
   name: material
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
+  custom_dir: overrides
   palette:
-    scheme: slate
-    primary: indigo
-    accent: indigo
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deepPurple
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deepPurple
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
   icon:
-    logo: material/library
-  custom_dir: docs/overrides
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.png
+  logo: assets/logo.png
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - def_list
+  - footnotes
+  - tables
 
 nav:
   - Home: index.md
@@ -24,52 +70,47 @@ nav:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quick-start.md
     - Configuration: getting-started/configuration.md
-  - Guides:
-    - Message Handling: guides/message-handling.md
-    - Budget Management: guides/budget-management.md
-    - Structured Responses: guides/structured-responses.md
-    - Usage Tracking: guides/usage-tracking.md
-  - Examples:
-    - Basic Usage: examples/basic-usage.md
-    - Django Integration: examples/django-integration.md
-    - FastAPI Integration: examples/fastapi-integration.md
-    - Agent System: examples/agent-system.md
+  - Core Concepts:
+    - Message Handling: core-concepts/message-handling.md
+    - Type-Safe Responses: core-concepts/type-safe-responses.md
+    - Online Search: core-concepts/online-search.md
+    - Budget Management: core-concepts/budget-management.md
+    - Error Handling: core-concepts/error-handling.md
+  - CLI Tools: cli.md
   - API Reference:
     - Client: api/client.md
-    - Models: api/models.md
     - Usage: api/usage.md
-    - Agents: api/agents.md
-  - About:
-    - Team: about/team.md
-    - Contributing: about/contributing.md
-    - License: about/license.md
-    - Security: about/security.md
-    - Roadmap: about/roadmap.md
-    - Changelog: about/changelog.md
-
-markdown_extensions:
-  - admonition
-  - codehilite
-  - pymdownx.highlight
-  - pymdownx.superfences
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - attr_list
-  - md_in_html
+  - Examples:
+    - Basic Usage: examples/basic-usage.md
+    - Chat Completion: examples/chat-completion.md
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../src]
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 2
+            docstring_style: google
+  - git-revision-date-localized:
+      type: timeago
   - minify:
       minify_html: true
+      minify_js: true
+      minify_css: true
+  - social
 
 extra:
-  generator: false
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/markolofsen/pydantic2
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/pydantic2/
+      link: https://pypi.org/project/pydantic2
     - icon: fontawesome/solid/globe
       link: https://unrealos.com
-copyright: Copyright &copy; 2024 UnrealOS
+
+copyright: Copyright &copy; 2025 UnrealOS
 site_dir: site

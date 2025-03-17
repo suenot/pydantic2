@@ -1,106 +1,122 @@
-# Welcome to Pydantic2
+# Pydantic2 🚀
 
-<figure markdown>
-  ![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
-</figure>
+A powerful Python framework for building AI applications with structured responses, powered by Pydantic AI and OpenRouter.
 
-Pydantic2 is a powerful library for working with Large Language Models (LLMs) that provides structured responses using Pydantic models. It simplifies the process of interacting with LLMs while ensuring type safety and data validation.
+![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
 
-## Features
 
-### 🚀 Structured Responses
-- Define response structures using Pydantic models
-- Automatic validation and parsing of LLM responses
-- Type safety and IDE support
+[![Documentation](https://img.shields.io/badge/docs-pydantic.unrealos.com-blue)](https://pydantic.unrealos.com)
+[![PyPI version](https://badge.fury.io/py/pydantic2.svg)](https://badge.fury.io/py/pydantic2)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-blue)](https://github.com/markolofsen/pydantic2/security/policy)
+[![PyUp Safety](https://pyup.io/repos/github/markolofsen/pydantic2/shield.svg)](https://pyup.io/repos/github/markolofsen/pydantic2/)
+[![Known Vulnerabilities](https://snyk.io/test/github/markolofsen/pydantic2/badge.svg)](https://snyk.io/test/github/markolofsen/pydantic2)
+[![GitGuardian scan](https://img.shields.io/badge/Secrets%20Scan-GitGuardian-orange)](https://www.gitguardian.com/)
 
-### 📊 Usage Tracking
-- Built-in usage statistics
-- Cost tracking and budgeting
-- Detailed request history
 
-### 🤖 Agent System
-- Simple yet powerful agent framework
-- Built-in tools for common tasks
-- Easy to extend with custom tools
+## Introduction
 
-### 🔌 Framework Integration
-- Seamless integration with FastAPI
-- Django integration support
-- Easy to integrate with other frameworks
+Pydantic2 combines the power of large language models with structured outputs using Pydantic. This framework allows you to:
 
-### 💼 Enterprise Ready
-- Production-grade performance
-- Comprehensive security features
-- Detailed documentation
+- Define structured output formats using Pydantic models
+- Connect to various LLM providers through a unified interface
+- Track usage and costs
+- Enable internet search capabilities
+- Manage response budgets
+- Handle errors gracefully
+- View and analyze usage data through built-in tools
 
-## Quick Start
+## Key Features
 
-### Installation
+- **🔒 Type-Safe Responses**: Built on Pydantic AI for robust type validation
+- **🌐 Online Search**: Real-time internet access for up-to-date information
+- **💰 Budget Control**: Built-in cost tracking and budget management
+- **📊 Usage Monitoring**: Detailed token and cost tracking
+- **🔄 Async Support**: Both sync and async interfaces
+- **🛡️ Error Handling**: Comprehensive exception system
+- **🎨 Colored Logging**: Beautiful console output with detailed logs
+- **🔍 Database Viewer**: Built-in CLI tools to inspect models and usage databases
 
-```bash
-pip install pydantic2
-```
-
-### Basic Usage
+## Quick Example
 
 ```python
-from pydantic import BaseModel, Field
 from typing import List
+from pydantic import BaseModel, Field
+from pydantic2 import PydanticAIClient, ModelSettings
 
-class MovieReview(BaseModel):
-    title: str = Field(description="The title of the movie")
-    rating: float = Field(description="The rating of the movie")
-    pros: List[str] = Field(description="The pros of the movie")
-    cons: List[str] = Field(description="The cons of the movie")
+# Define your response model
+class ChatResponse(BaseModel):
+    message: str = Field(description="The chat response message")
+    sources: List[str] = Field(default_factory=list, description="Sources used")
+    confidence: float = Field(ge=0, le=1, description="Confidence score")
 
-client = LiteLLMClient(Request(
-    model="openrouter/openai/gpt-4o-mini-2024-07-18",
-    answer_model=MovieReview
-))
-
-response = client.generate_response(
-    prompt="Review the movie 'Inception'"
+# Initialize client
+client = PydanticAIClient(
+    model_name="openai/gpt-4o-mini-2024-07-18",
+    client_id="my_app",           # Required for usage tracking
+    user_id="user123",           # Required for usage tracking
+    verbose=True,
+    online=True,                 # Enable internet access
+    max_budget=10.0,            # Set $10 budget limit
+    model_settings=ModelSettings(
+        max_tokens=1000,
+        temperature=0.7,
+        top_p=1,
+        frequency_penalty=0,
+    )
 )
 
-print(f"Title: {response.title}")
-print(f"Rating: {response.rating}/5")
-print("Pros:", ", ".join(response.pros))
-print("Cons:", ", ".join(response.cons))
+# Add context
+client.message_handler.add_message_system(
+    "You are a helpful AI assistant. Be concise but informative."
+)
+
+# Add user message
+client.message_handler.add_message_user(
+    "What is the capital of France?"
+)
+
+# Generate response
+response: ChatResponse = client.generate(
+    result_type=ChatResponse
+)
+
+print(f"Message: {response.message}")
+print(f"Sources: {response.sources}")
+print(f"Confidence: {response.confidence}")
+
+# Get usage statistics
+stats = client.get_usage_stats()
+print(f"Total cost: ${stats.get('total_cost', 0):.4f}")
 ```
-
-## Why Pydantic2?
-
-- **Type Safety**: Get structured responses with proper type hints and validation
-- **Efficiency**: Reduce boilerplate code and focus on your application logic
-- **Reliability**: Production-tested with comprehensive error handling
-- **Flexibility**: Support for multiple LLM providers and frameworks
-- **Scalability**: Built for both small projects and enterprise applications
 
 ## Getting Started
 
-- [Installation Guide](getting-started/installation.md)
-- [Quick Start Guide](getting-started/quick-start.md)
-- [Configuration Guide](getting-started/configuration.md)
+- [Installation](getting-started/installation.md) - How to install Pydantic2
+- [Quick Start](getting-started/quick-start.md) - Get up and running in minutes
+- [Configuration](getting-started/configuration.md) - Configure Pydantic2 for your needs
+
+## Core Concepts
+
+- [Type-Safe Responses](core-concepts/type-safe-responses.md) - Structure AI outputs with Pydantic
+- [Online Search](core-concepts/online-search.md) - Enable real-time internet access
+- [Budget Management](core-concepts/budget-management.md) - Control your API costs
+- [Error Handling](core-concepts/error-handling.md) - Handle exceptions gracefully
+
+## API Reference
+
+- [Client](api/client.md) - Main client interface
+- [Usage Tracking](api/usage.md) - Monitor costs and usage
+
+## CLI Tools
+
+- [Database Viewing](cli.md) - View and analyze your usage and models databases
 
 ## Examples
 
-- [Basic Usage](examples/basic-usage.md)
-- [Django Integration](examples/django-integration.md)
-- [FastAPI Integration](examples/fastapi-integration.md)
-- [Agent System](examples/agent-system.md)
+- [Basic Usage](examples/basic-usage.md) - Simple examples to get started
+- [Chat Completion](examples/chat-completion.md) - Create chatbot applications
 
-## Community
+## Contributing
 
-- [GitHub Repository](https://github.com/markolofsen/pydantic2)
-- [Issue Tracker](https://github.com/markolofsen/pydantic2/issues)
-- [Contributing Guide](about/contributing.md)
-
-## Support
-
-For support and questions:
-- Email: [info@unrealos.com](mailto:info@unrealos.com)
-- GitHub Discussions: [Pydantic2 Discussions](https://github.com/markolofsen/pydantic2/discussions)
-
-## License
-
-Pydantic2 is released under the MIT License. See the [License](about/license.md) page for more details.
+We welcome contributions! See the project repository on [GitHub](https://github.com/markolofsen/pydantic2) for more information.

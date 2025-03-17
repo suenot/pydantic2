@@ -19,6 +19,7 @@ venv.bak/
 .conda/
 .venv.bak/
 .venv_dev/
+# poetry.lock
 
 # Pyenv
 .python-version
@@ -162,8 +163,5 @@ package-lock.json
 # ========================
 # Pypi
 # ========================
-setup.cfg
-setup.py
-MANIFEST.in
 security_reports/
 .safety-project.ini
