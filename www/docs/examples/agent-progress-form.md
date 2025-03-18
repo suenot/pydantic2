@@ -5,55 +5,32 @@ Example of using Progress Form to create a smart startup registration form with 
 ## Complete Code Example
 
 ```python
-from pydantic2.agents.progress_form import BaseProgressForm
-from pydantic import BaseModel, Field
 from typing import List, Optional
+from pydantic import BaseModel, Field
+from pydantic2.agents.progress_form import BaseProgressForm
 
-# 1. Define form structure
+
 class StartupForm(BaseModel):
-    """Structure for storing startup information"""
-    idea_desc: str = Field(
-        default="",
-        description="Description of startup idea"
-    )
-    target_mkt: str = Field(
-        default="",
-        description="Target market information"
-    )
-    biz_model: str = Field(
-        default="",
-        description="Business model"
-    )
-    team_info: str = Field(
-        default="",
-        description="Team information"
-    )
+    """Structure for storing startup form data"""
+    idea_desc: str = Field(default="", description="Description of startup idea")
+    target_mkt: str = Field(default="", description="Target market info")
+    biz_model: str = Field(default="", description="Business model info")
+    team_info: str = Field(default="", description="Team background")
 
-# 2. Define analysis format
+
 class StartupFormResponse(BaseModel):
-    """Startup analysis response format"""
-    feedback: str = Field(
-        description="Detailed idea analysis"
-    )
-    score: float = Field(
-        ge=0, le=10,
-        description="Overall idea score"
-    )
-    strengths: List[str] = Field(
-        description="Key strengths"
-    )
-    weaknesses: List[str] = Field(
-        description="Areas for improvement"
-    )
-    next_steps: List[str] = Field(
-        description="Recommended next steps"
-    )
+    """Response format for startup form analysis"""
+    feedback: str = Field(description="Detailed feedback on the startup idea")
+    score: float = Field(ge=0, le=10, description="Overall score of the startup idea")
+    strengths: List[str] = Field(description="Key strengths of the startup idea")
+    weaknesses: List[str] = Field(description="Areas for improvement")
+    next_steps: List[str] = Field(description="Recommended next steps")
     market_potential: Optional[float] = Field(
         ge=0, le=10,
         description="Market potential score"
     )
 
-# 3. Create form processor
+
 class StartupFormProcessor(BaseProgressForm):
     """Processor for startup form data"""
 
@@ -62,19 +39,18 @@ class StartupFormProcessor(BaseProgressForm):
             user_id=user_id,
             client_id="startup_form",
             form_class=StartupForm,
-            verbose=True  # Enable logging
+            verbose=False,
+            verbose_clients=False
         )
 
-        # Register analysis tool
+        # Register tools
         self.tools = [self.analyze_startup]
 
         # Configure test agent
         self.configure_test_agent(
             prompt="""
-            You are an early-stage startup founder with an interesting idea.
-            Your idea involves AI and machine learning.
-            You're enthusiastic but inexperienced in business.
-            Respond like a real person, occasionally making typical mistakes.
+            You are a naive startup founder who is asking for help to make a startup.
+            Talk like a stupid.
             """,
             client=self._get_test_agent_client(temperature=0.7)
         )
@@ -83,53 +59,51 @@ class StartupFormProcessor(BaseProgressForm):
         self,
         message: str,
     ) -> StartupFormResponse:
-        """Analyze startup information"""
+        """Analyze complete startup info when form is complete"""
         client = self._get_tool_client(temperature=0.7)
 
-        # Configure analysis prompt
         client.message_handler.add_message_system(
             """
-            You are an experienced startup analyst. Conduct analysis:
-            1. Evaluate idea viability (0-10)
-            2. Identify 3-5 key strengths
-            3. Point out 2-3 areas for improvement
+            You are a startup analyst. Generate a comprehensive analysis:
+            1. Evaluate overall viability (0-10)
+            2. List 3-5 key strengths
+            3. List 2-3 areas for improvement
             4. Suggest 2-3 specific next steps
-            5. Rate market potential (0-10)
+            5. Score market potential (0-10)
             """
         )
 
-        # Add form data for analysis
         client.message_handler.add_message_block(
             "STARTUP_INFO",
             self.current_state.form.model_dump()
         )
 
         try:
-            # Generate analysis
             result: StartupFormResponse = client.generate(
                 result_type=StartupFormResponse
             )
 
-            # Print results
             print("\n")
             print("="*50)
-            print("🎉 STARTUP ANALYSIS COMPLETE 🎉")
+            print("🎉 STARTUP ANALYSIS SUCCESS 🎉")
             print("="*50)
             print(result.model_dump_json(indent=2))
             print("="*50)
 
             return result
         except Exception as e:
-            raise Exception(f"Analysis error: {str(e)}")
+            raise Exception(f"Error analyzing startup: {str(e)}")
 
-# 4. Run the dialog
+
 def main():
     """Example usage of StartupFormProcessor"""
     processor = StartupFormProcessor(user_id="test_user")
     processor.run_test_dialog()
 
+
 if __name__ == "__main__":
     main()
+
 ```
 
 ## How It Works
