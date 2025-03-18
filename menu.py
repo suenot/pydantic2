@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 import configparser
-
+import re
 import questionary
 import semver
 
@@ -393,19 +393,26 @@ class DeployManager:
             except Exception as e:
                 print(f"❌ Error updating setup.cfg: {e}")
 
-        # Update version in __init__.py if it exists
-        init_path = self.root_dir / "src" / module_name / "__init__.py"
-        if not init_path.exists():
-            init_path = self.root_dir / module_name / "__init__.py"
+        # Update version in __pack__.py if it exists
+        init_path = self.root_dir / "src" / module_name / "__pack__.py"
 
+        # update __pack__.py
         if init_path.exists():
-            import re
+
             with open(init_path) as f:
                 content = f.read()
 
+            # update __version__
             content = re.sub(
                 r'__version__ = ".*"',
                 f'__version__ = "{new_version}"',
+                content
+            )
+
+            # update __name__
+            content = re.sub(
+                r'__name__ = ".*"',
+                f'__name__ = "{module_name}"',
                 content
             )
 

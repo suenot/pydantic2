@@ -5,22 +5,23 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.usage import Usage
 from pydantic_ai.settings import ModelSettings
-from .message_handler import MessageHandler
-from .usage.usage_info import UsageInfo
-from .usage.model_prices import ModelPriceManager
-from ..utils.logger import logger
-from .exceptions import (
-    BudgetExceeded, ErrorGeneratingResponse, ModelNotFound,
-    InvalidConfiguration, AuthenticationError, RateLimitExceeded,
-    ValidationError, NetworkError
-)
 import os
 from dotenv import load_dotenv
 import time
 import uuid
 import asyncio
 import aiohttp
-from datetime import datetime, timezone
+
+from .exceptions import (
+    BudgetExceeded, ErrorGeneratingResponse, ModelNotFound,
+    InvalidConfiguration, AuthenticationError, RateLimitExceeded,
+    ValidationError, NetworkError
+)
+from .message_handler import MessageHandler
+from .usage.usage_info import UsageInfo
+from .usage.model_prices import ModelPriceManager
+from ..utils.version_control.check import VersionControl
+from ..utils.logger import logger
 
 # Load environment variables
 load_dotenv()
@@ -48,13 +49,14 @@ class PydanticAIClient:
             logger.set_verbose(verbose)
 
             # Store original model name for price lookups
-            self.base_model_name = model_name.split(':')[0]  # Remove :online suffix if present
+            self.base_model_name = model_name.split(':')[0]
 
             # Add online suffix if needed
             if online and not model_name.endswith(':online'):
                 model_name = f"{model_name}:online"
-                # Always show bright message for online mode regardless of verbose
-                logger.success("🌐 Online search mode is enabled - AI will use real-time internet data!")
+                logger.success(
+                    "🌐 Online search mode is enabled - AI will use real-time internet data!"
+                )
 
             self.model_name = model_name
             self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
@@ -88,6 +90,10 @@ class PydanticAIClient:
             except Exception as e:
                 raise ModelNotFound(model_name) from e
 
+            # Initialize version control and check for updates
+            self.version_control = VersionControl()
+            self.version_control.check_for_update()
+
             logger.info(f"Initialized PydanticAIClient with model: {model_name}")
             if max_budget:
                 logger.info(f"Maximum budget set to ${max_budget:.2f}")
@@ -110,7 +116,10 @@ class PydanticAIClient:
             result_usage = result.usage()
             usage.incr(result_usage)
             if self.verbose:
-                logger.info(f"Usage - Request: {usage.request_tokens}, Response: {usage.response_tokens}, Total: {usage.total_tokens}")
+                logger.info(
+                    f"Usage - Request: {usage.request_tokens}, Response: {usage.response_tokens}, "
+                    f"Total: {usage.total_tokens}"
+                )
         return usage
 
     def _calculate_cost(self, usage: Usage) -> float:
@@ -121,7 +130,9 @@ class PydanticAIClient:
         # Use base model name for price lookup
         model_price = self.price_manager.get_model_price(self.base_model_name)
         if not model_price:
-            logger.warning(f"No price information found for model {self.base_model_name}")
+            logger.warning(
+                f"No price information found for model {self.base_model_name}"
+            )
             return 0.0
 
         # Get actual float values from the model price fields
@@ -129,7 +140,10 @@ class PydanticAIClient:
         output_cost = (usage.response_tokens or 0) * model_price.get_output_cost()
         total_cost = input_cost + output_cost
 
-        logger.debug(f"Cost calculation - Input: ${input_cost:.4f}, Output: ${output_cost:.4f}, Total: ${total_cost:.4f}")
+        logger.debug(
+            f"Cost calculation - Input: ${input_cost:.4f}, Output: ${output_cost:.4f}, "
+            f"Total: ${total_cost:.4f}"
+        )
 
         return total_cost
 
@@ -139,7 +153,9 @@ class PydanticAIClient:
             current_usage = self.usage_info.get_usage_stats()
             current_cost = current_usage.get('total_cost', 0) if current_usage else 0
 
-            logger.debug(f"Current cost: ${current_cost:.4f}, Budget limit: ${self.max_budget:.4f}")
+            logger.debug(
+                f"Current cost: ${current_cost:.4f}, Budget limit: ${self.max_budget:.4f}"
+            )
 
             if current_cost >= self.max_budget:
                 raise BudgetExceeded(current_cost, self.max_budget)
@@ -177,7 +193,10 @@ class PydanticAIClient:
             current_usage = self.usage_info.get_usage_stats()
             if current_usage and current_usage.get('total_cost', 0) > self.max_budget:
                 if self.verbose:
-                    logger.warning(f"User {self.user_id} has exceeded their budget limit of ${self.max_budget:.2f}")
+                    logger.warning(
+                        f"User {self.user_id} has exceeded their budget limit of "
+                        f"${self.max_budget:.2f}"
+                    )
 
     async def _generate_async(
         self,
@@ -369,7 +388,6 @@ class PydanticAIClient:
 
         # Use current time if created timestamp is not available
         created_ts = response.created or int(time.time())
-        timestamp = datetime.fromtimestamp(created_ts, tz=timezone.utc)
 
         # Extract the message content
         message = response.choices[0].message
