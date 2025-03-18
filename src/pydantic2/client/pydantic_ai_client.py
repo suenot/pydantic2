@@ -20,6 +20,7 @@ import time
 import uuid
 import asyncio
 import aiohttp
+from datetime import datetime, timezone
 
 # Load environment variables
 load_dotenv()
@@ -182,7 +183,6 @@ class PydanticAIClient:
         self,
         result_type: type[BaseModel],
         retries: Optional[int] = None,
-        model_settings: Optional[ModelSettings] = None,
     ) -> Any:
         """Async implementation of generate method."""
         request_id = str(uuid.uuid4())
@@ -197,17 +197,29 @@ class PydanticAIClient:
         start_time = time.perf_counter()
 
         try:
+
+            formatted_prompt = self.message_handler.get_formatted_prompt()
+
+            if formatted_prompt:
+                logger.info("Formatted prompt:")
+                logger.info(formatted_prompt)
+
+            logger.info("--------------------------------")
+
             agent = Agent(
                 self.model,
                 result_type=result_type,
                 retries=retries or self.retries,
-                system_prompt=self.message_handler.get_system_prompt()
+                # system_prompt=system_prompt
             )
 
             result = await agent.run(
-                self.message_handler.get_user_prompt(),
-                model_settings=model_settings or self.model_settings
+                user_prompt=formatted_prompt,
+                model_settings=self.model_settings,
             )
+
+            # Clear the message handler after the response
+            self.message_handler.clear()
 
             response_time = time.perf_counter() - start_time
             if self.verbose:
@@ -240,9 +252,17 @@ class PydanticAIClient:
                     response_time=time.perf_counter() - start_time,
                     request_id=request_id
                 )
+
+            # Clear the message handler after the response
+            self.message_handler.clear()
+
             raise error
 
         except Exception as e:
+
+            # Clear the message handler after the response
+            self.message_handler.clear()
+
             if isinstance(e, (BudgetExceeded, ValidationError, NetworkError)):
                 raise
 
@@ -270,11 +290,10 @@ class PydanticAIClient:
         self,
         result_type: type[BaseModel],
         retries: Optional[int] = None,
-        model_settings: Optional[ModelSettings] = None,
     ) -> Any:
         """Synchronous version of generate method."""
         try:
-            return asyncio.run(self._generate_async(result_type, retries, model_settings))
+            return asyncio.run(self._generate_async(result_type, retries))
         except KeyboardInterrupt:
             if self.verbose:
                 logger.info("Generation interrupted by user")
@@ -288,11 +307,10 @@ class PydanticAIClient:
         self,
         result_type: type[BaseModel],
         retries: Optional[int] = None,
-        model_settings: Optional[ModelSettings] = None,
     ) -> Any:
         """Asynchronous version of generate method."""
         try:
-            return await self._generate_async(result_type, retries, model_settings)
+            return await self._generate_async(result_type, retries)
         except Exception as e:
             if self.verbose:
                 logger.error(f"Error in generate_async: {str(e)}")
@@ -343,3 +361,19 @@ class PydanticAIClient:
     def __del__(self):
         """Cleanup when the client is destroyed."""
         self.close()
+
+    def _process_response(self, response: Any) -> str:
+        """Process OpenAI API response."""
+        if not response.choices:
+            raise ValueError("No choices in response")
+
+        # Use current time if created timestamp is not available
+        created_ts = response.created or int(time.time())
+        timestamp = datetime.fromtimestamp(created_ts, tz=timezone.utc)
+
+        # Extract the message content
+        message = response.choices[0].message
+        if not message or not message.content:
+            raise ValueError("No content in response message")
+
+        return message.content

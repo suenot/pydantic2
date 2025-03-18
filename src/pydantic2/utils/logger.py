@@ -58,12 +58,12 @@ class AILogger:
     @classmethod
     def warning(cls, message: str):
         if cls._logger:
-            cls._logger.warning(message)
+            cls._logger.warning(f"\033[93m{message}\033[0m")
 
     @classmethod
     def error(cls, message: str):
         if cls._logger:
-            cls._logger.error(message)
+            cls._logger.error(f"\033[91m{message}\033[0m")
 
     @classmethod
     def success(cls, message: str):

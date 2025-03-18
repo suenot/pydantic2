@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 import json
 from pydantic import BaseModel
+from ..utils.logger import logger
 
 
 class MessageFormatError(Exception):
@@ -22,12 +23,16 @@ class MessageHandler:
         """Clear all messages."""
         self.messages = []
 
-    def _add_message(self, role: str, content: Any) -> None:
+    def _add_message(self, role: str, content: Any, to_flat_yaml: bool = True) -> None:
         """Add a message to the list."""
+        if to_flat_yaml:
+            content = self.to_flat_yaml(content)
+
         if not self._validate_message(role, content):
+            logger.error(f"Message already exists: {content}")
             return
-        formatted_content = self.to_flat_yaml(content)
-        self.messages.append({"role": role, "content": formatted_content})
+
+        self.messages.append({"role": role, "content": content})
 
     def _validate_message(self, role: str, content: Any) -> bool:
         """Validate if message is already in the list."""
@@ -52,27 +57,14 @@ class MessageHandler:
     def add_message_block(self, block_type: str, content: Any):
         """Add a structured data block."""
         block_type = block_type.upper()
-        self._add_message("system", f"[{block_type}]:\n{content}\n[/{block_type}]")
-
-    def get_messages(self):
-        """Get all messages."""
-        return self.messages
-
-    def get_system_prompt(self) -> str:
-        """Get combined system prompt."""
-        system_messages = [msg["content"] for msg in self.messages if msg["role"] == "system"]
-        return "\n".join(system_messages)
-
-    def get_user_prompt(self) -> str:
-        """Get combined user and assistant messages."""
-        user_messages = [msg["content"] for msg in self.messages if msg["role"] in ("user", "assistant")]
-        return "\n".join(user_messages)
+        self._add_message("user", f"[{block_type}]:\n{content}\n[/{block_type}]", to_flat_yaml=False)
 
     def format_raw_request(self) -> str:
         """Format the complete request for logging."""
-        system_prompt = self.get_system_prompt()
-        user_prompt = self.get_user_prompt()
-        return "\n".join(filter(None, [system_prompt, user_prompt]))
+        formatted = []
+        for message in self.messages:
+            formatted.append(f"{message['role']}:\n{message['content']}\n")
+        return "\n\n".join(formatted)
 
     def get_formatted_prompt(self) -> str:
         """Get a formatted string representation of all messages."""
