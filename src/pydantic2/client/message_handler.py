@@ -1,5 +1,9 @@
 from typing import Any
 import yaml
+import re
+from bs4 import BeautifulSoup
+import json
+from pydantic import BaseModel
 
 
 class MessageFormatError(Exception):
@@ -18,48 +22,37 @@ class MessageHandler:
         """Clear all messages."""
         self.messages = []
 
-    def _validate_message(self, message: Any) -> None:
-        """Validate if message type is supported."""
-        if not isinstance(message, self.ALLOWED_TYPES):
-            type_name = type(message).__name__
-            allowed_types = ', '.join(t.__name__ for t in self.ALLOWED_TYPES)
-            raise MessageFormatError(
-                f"Unsupported message type: {type_name}. "
-                f"Allowed types are: {allowed_types}"
-            )
+    def _add_message(self, role: str, content: Any) -> None:
+        """Add a message to the list."""
+        if not self._validate_message(role, content):
+            return
+        formatted_content = self.to_flat_yaml(content)
+        self.messages.append({"role": role, "content": formatted_content})
 
-    def _format_data(self, data: Any) -> str:
-        """Format data in a readable way using YAML."""
-        self._validate_message(data)
+    def _validate_message(self, role: str, content: Any) -> bool:
+        """Validate if message is already in the list."""
+        for message in self.messages:
+            if message["role"] == role and message["content"] == content:
+                return False
+        return True
 
-        if isinstance(data, (dict, list)):
-            yaml_str = yaml.dump(
-                data,
-                default_flow_style=False,
-                allow_unicode=True,
-                sort_keys=False,
-                indent=2
-            )
-            return yaml_str.strip()
-        else:
-            return str(data)
-
-    def add_message_system(self, content: str):
+    def add_message_system(self, content: Any):
         """Add a system message."""
-        self.messages.append({"role": "system", "content": content})
+        # formatted_content = self.to_flat_yaml(content)
+        self._add_message("system", content)
 
-    def add_message_user(self, content: str):
+    def add_message_user(self, content: Any):
         """Add a user message."""
-        self.messages.append({"role": "user", "content": content})
+        self._add_message("user", content)
 
-    def add_message_assistant(self, content: str):
+    def add_message_assistant(self, content: Any):
         """Add an assistant message."""
-        self.messages.append({"role": "assistant", "content": content})
+        self._add_message("assistant", content)
 
-    def add_message_block(self, block_type: str, content: dict):
+    def add_message_block(self, block_type: str, content: Any):
         """Add a structured data block."""
-        formatted_content = f"{block_type}:\n" + "\n".join(f"{k}: {v}" for k, v in content.items())
-        self.messages.append({"role": "system", "content": formatted_content})
+        block_type = block_type.upper()
+        self._add_message("system", f"[{block_type}]:\n{content}\n[/{block_type}]")
 
     def get_messages(self):
         """Get all messages."""
@@ -89,3 +82,94 @@ class MessageHandler:
             formatted.append(f"{message['role']}:\n{message['content']}\n")
 
         return "\n\n".join(formatted)
+
+    def add_model_schema(self, answer_model: type[BaseModel]):
+        """Generate schema instructions for the model."""
+        schema = answer_model.model_json_schema()
+        # Remove metadata that might confuse the AI
+        schema.pop('title', None)
+        schema.pop('type', None)
+
+        response = f"""
+        Response:
+        - Return only ONE clean JSON object based on the schema.
+        - No code blocks, no extra text, just the JSON object.
+        - Make sure the JSON is valid and properly formatted.
+        - Do not return the schema itself, return only the JSON object based on
+          the schema.
+        [SCHEMA]
+        {json.dumps(schema)}
+        [/SCHEMA]
+
+        """
+        result = self.trim_message(response)
+        self.messages.append({"role": "system", "content": result})
+
+    @staticmethod
+    def trim_message(message: str) -> str:
+        """Trim all types of whitespace from the message using regex.
+
+        Args:
+            message: Message to trim
+
+        Returns:
+            Message with trimmed whitespace
+        """
+        # Remove leading/trailing whitespace from each line
+        # and collapse multiple spaces into single space
+        lines = message.split('\n')
+        trimmed_lines = [
+            re.sub(r'\s+', ' ', line.strip())
+            for line in lines
+        ]
+        # Remove empty lines at start and end
+        while trimmed_lines and not trimmed_lines[0]:
+            trimmed_lines.pop(0)
+        while trimmed_lines and not trimmed_lines[-1]:
+            trimmed_lines.pop()
+        return '\n'.join(trimmed_lines)
+
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        """Clean text from special characters and HTML tags"""
+        # Remove HTML tags
+        soup = BeautifulSoup(text, "html.parser")
+        text = soup.get_text()
+        # Remove special characters but keep basic punctuation
+        text = re.sub(r'[^\w\s.,!?-]', '', text)
+        # Normalize whitespace
+        return ' '.join(text.split()).strip()
+
+    @staticmethod
+    def to_flat_yaml(data: Any, section: str | None = None) -> str:
+        """Convert nested data to flat YAML format with optional section header"""
+
+        """Validate if message type is supported."""
+        if not isinstance(data, MessageHandler.ALLOWED_TYPES):
+            type_name = type(data).__name__
+            allowed_types = ', '.join(t.__name__ for t in MessageHandler.ALLOWED_TYPES)
+            raise MessageFormatError(
+                f"Unsupported message type: {type_name}. "
+                f"Allowed types are: {allowed_types}"
+            )
+
+        # First convert to YAML with proper indentation
+        yaml_str = yaml.dump(
+            data,
+            sort_keys=False,
+            default_flow_style=False,
+            allow_unicode=True,
+            indent=2,
+            width=200,
+            explicit_start=False,
+            explicit_end=False,
+            canonical=False,
+            default_style='',
+        )
+
+        # Add section markers if section is provided
+        if section:
+            section = section.upper()
+            return f"[{section}]:\n{yaml_str}\n[/{section}]"
+
+        return yaml_str

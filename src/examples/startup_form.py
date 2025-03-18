@@ -1,530 +1,458 @@
-from typing import List, Any
-from pydantic import BaseModel, Field, ConfigDict
-from pydantic_ai import Agent
-from pydantic_ai.usage import Usage
-from pydantic_ai.agent import AgentRunResult
-from pydantic_ai.tools import RunContext
-from pydantic_ai.providers.openai import OpenAIProvider
-from pydantic_ai.models.openai import OpenAIModel
-from bs4 import BeautifulSoup
-import re
-import os
-from dotenv import load_dotenv
+from typing import List, Optional, Any
 import yaml
-from colorlog import ColoredFormatter
+import re
+from bs4 import BeautifulSoup
+from pydantic import BaseModel, Field, ConfigDict
+from src.pydantic2 import PydanticAIClient, ModelSettings
+from dotenv import load_dotenv
+import random
+import time
 import logging
 
-# Setup logging
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-handler.setFormatter(ColoredFormatter(
-    "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s%(reset)s",
-    log_colors={
-        'DEBUG': 'cyan',
-        'INFO': 'green',
-        'WARNING': 'yellow',
-        'ERROR': 'red',
-        'CRITICAL': 'bold_red',
-    },
-    reset=True,
-    style='%'
-))
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG)  # Set once and keep at DEBUG level
 
-# load env variables
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Load environment variables
 load_dotenv()
 
 
-def to_flat_yaml(data: Any, section: str | None = None) -> str:
-    """Convert nested data to flat YAML format with optional section header"""
-    # First convert to YAML with proper indentation
-    yaml_str = yaml.dump(
-        data,
-        sort_keys=False,
-        default_flow_style=False,
-        allow_unicode=True,
-        indent=2,
-        width=200,
-        explicit_start=False,
-        explicit_end=False,
-        canonical=False,
-        default_style='',
-    )
-
-    # Add section markers if section is provided
-    if section:
-        section = section.upper()
-        return f"[{section}]:\n{yaml_str}\n[/{section}]"
-
-    return yaml_str
-
-
-def clean_text(text: str) -> str:
-    """Clean text from special characters and HTML tags"""
-    # Remove HTML tags
-    soup = BeautifulSoup(text, "html.parser")
-    text = soup.get_text()
-    # Remove special characters but keep basic punctuation
-    text = re.sub(r'[^\w\s.,!?-]', '', text)
-    # Normalize whitespace
-    return ' '.join(text.split()).strip()
-
-
-def clean_prompt(prompt: str) -> str:
-    """Clean prompt text by removing extra whitespace and empty lines, but preserve sections"""
-    def clean_part(text: str) -> str:
-        """Clean non-section text by removing extra whitespace and empty lines"""
-        return '\n'.join(line.strip() for line in text.split('\n') if line.strip())
-
-    # Find and preserve sections, clean everything else
-    pattern = r'(\[.*?\]:.*?\[/.*?\])'
-    parts = re.split(pattern, prompt, flags=re.DOTALL)
-
-    cleaned_parts = []
-    for part in parts:
-        if part.strip():
-            if re.match(r'\[.*?\]:.*\[/.*?\]', part, re.DOTALL):
-                cleaned_parts.append(part)  # Keep section unchanged
-            else:
-                cleaned_parts.append(clean_part(part))  # Clean non-section text
-
-    return '\n'.join(cleaned_parts).strip()
-
-
-def format_long_text(text: str, width: int = 80) -> str:
-    """Format long text with proper wrapping"""
-    words = text.split()
-    lines = []
-    current_line = []
-    current_length = 0
-
-    for word in words:
-        if current_length + len(word) + 1 <= width:
-            current_line.append(word)
-            current_length += len(word) + 1
-        else:
-            lines.append(' '.join(current_line))
-            current_line = [word]
-            current_length = len(word)
-
-    if current_line:
-        lines.append(' '.join(current_line))
-
-    return '\n  '.join(lines)
-
-
 class StartupForm(BaseModel):
-    """Startup information form"""
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    product: str = Field(default="", description="Product description")
-    stage: str = Field(default="", description="Development stage")
-    target_users: str = Field(default="", description="Target audience description")
-    business_model: str = Field(default="", description="How the startup makes money")
-    unique_features: List[str] = Field(default_factory=list, description="List of unique features/advantages")
+    """Structure for storing startup form data"""
+    idea_desc: str = Field(default="", description="Description of startup idea")
+    target_mkt: str = Field(default="", description="Target market info")
+    biz_model: str = Field(default="", description="Business model info")
+    team_info: str = Field(default="", description="Team background")
 
 
 class FormState(BaseModel):
-    """State for tracking form progress"""
+    """State for tracking form progress and processing"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    # Form data and progress
     form: StartupForm = Field(default_factory=StartupForm)
-    progress: int = Field(default=0, description="Form completion progress (0-100)")
-    last_question: str = Field(default="Tell me about your startup idea.", description="Last question asked")
-    feedback: str = Field(default="", description="Feedback on the last answer")
+    progress: int = Field(default=0, description="Form progress (0-100)")
+    last_msg: str = Field(
+        default="Initial startup form state",
+        description="Last processed message"
+    )
+    prev_question: str = Field(
+        default="",
+        description="Previous question asked"
+    )
+    prev_answer: str = Field(
+        default="",
+        description="Previous answer received"
+    )
 
-    def print_state(self):
-        """Print current state of the form with improved formatting"""
-        print("\n" + "=" * 80)
-        print("📊 FORM STATE")
-        print("=" * 80)
-
-        # Progress bar with percentage
-        filled = "█" * (self.progress // 2)
-        empty = "░" * (50 - self.progress // 2)
-        print(f"\n📈 Progress: {self.progress}%")
-        print(f"|{filled}{empty}|")
-
-        # Form data with improved formatting
-        print("\n📝 Form Data:")
-        print("-" * 80)
-
-        form_data = self.form.model_dump()
-        for field, value in form_data.items():
-            if isinstance(value, str) and value:
-                print(f"\n{field.title()}:")
-                print(f"  {format_long_text(value)}")
-            elif isinstance(value, list) and value:
-                print(f"\n{field.title()}:")
-                for item in value:
-                    print(f"  • {item}")
-            elif value:  # For any other non-empty values
-                print(f"\n{field.title()}: {value}")
-
-        # Feedback with improved formatting
-        if self.feedback:
-            print("\n💭 Feedback:")
-            print("-" * 80)
-            print(format_long_text(self.feedback))
-
-        # Last question with improved formatting
-        if self.last_question:
-            print("\n❓ Next Question:")
-            print("-" * 80)
-            print(format_long_text(self.last_question))
-
-        print("=" * 80)
+    # Processing state
+    feedback: str = Field(default="", description="Feedback on provided information")
+    confidence: float = Field(
+        default=0.0,
+        ge=0, le=1,
+        description="Confidence in the current state"
+    )
+    next_question: str = Field(
+        default="",
+        description="Next question to ask the user"
+    )
 
 
-class FormProcessorResponse(BaseModel):
-    """Response from the form processor"""
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    updated_form: StartupForm = Field(description="Updated form with new information")
-    progress: int = Field(description="Overall form completion (0-100)", ge=0, le=100)
-    feedback: str = Field(description="Feedback on the provided information")
-    example: str = Field(description="Example of a good answer that would improve completion")
-    next_question: str = Field(description="Next question to ask")
-    next_message: str = Field(default="", description="Next message to process from available messages")
-    selection_reason: str = Field(default="", description="Reason for selecting the next message")
-
-
-class StartupAnalysis(BaseModel):
-    """Analysis results for the startup"""
-    summary: str = Field(description="Brief summary of the startup")
-    strengths: List[str] = Field(description="Key strengths of the startup")
-    risks: List[str] = Field(description="Potential risks and challenges")
-    recommendations: List[str] = Field(description="Actionable recommendations")
+class StartupFormResponse(BaseModel):
+    """Response format for startup form analysis."""
+    feedback: str = Field(description="Detailed feedback on the startup idea")
+    score: float = Field(ge=0, le=10, description="Overall score of the startup idea")
+    strengths: List[str] = Field(description="Key strengths of the startup idea")
+    weaknesses: List[str] = Field(description="Areas for improvement")
+    next_steps: List[str] = Field(description="Recommended next steps")
+    market_potential: Optional[float] = Field(
+        ge=0, le=10,
+        description="Market potential score"
+    )
 
 
-# Initialize OpenAI models with OpenRouter
-form_processor_model = OpenAIModel(
-    'openai/gpt-4o-mini-2024-07-18',
-    provider=OpenAIProvider(
-        base_url='https://openrouter.ai/api/v1',
-        api_key=os.getenv('OPENROUTER_API_KEY'),
-    ),
-)
+# Predefined messages for form improvement
+STARTUP_MESSAGES = [
+    """SmartMail is an AI-powered email management platform. It uses machine
+    learning to help professionals manage their inbox efficiently. The system
+    analyzes email patterns and user behavior to provide smart organization
+    and prioritization features.""",
 
-analyzer_model = OpenAIModel(
-    'openai/gpt-4o-mini-2024-07-18',
-    provider=OpenAIProvider(
-        base_url='https://openrouter.ai/api/v1',
-        api_key=os.getenv('OPENROUTER_API_KEY'),
-    ),
-)
+    """Our target users are busy professionals handling 100+ emails daily:
+    executives, entrepreneurs, and knowledge workers. We've validated through
+    50+ user interviews and have a 200-person waitlist including employees
+    from major tech companies.""",
 
-# Create the form processor agent
-form_processor = Agent(
-    form_processor_model,
-    result_type=FormProcessorResponse,
-    retries=3,
-    system_prompt="""
-    You are a form processing assistant that helps structure and validate user information.
+    """Freemium SaaS model with proven traction. Basic tier free for user
+    acquisition, premium at $15/month for individuals, $49/user/month for
+    enterprise. Current MRR: $2,000 from early adopters.""",
 
-    For each message, you MUST:
-    1. Analyze the current form state and user's answer carefully
-    2. Extract relevant information from the user's answer and update appropriate form fields
-    3. Calculate progress based on field completion:
-       - Each non-empty field contributes equally to the total progress
-       - Consider both completeness and quality of information
-       - Progress should never decrease
-    4. Provide clear feedback about what information is still missing or needs improvement
-    5. Generate relevant follow-up questions to gather missing or unclear information
-    6. Set progress to 100% only when all fields contain complete, high-quality information
+    """Two technical co-founders with ML/AI experience from Google and Amazon.
+    One business developer with 5 years in SaaS sales and previous successful
+    exit. Advisory board includes email security expert and VP of Product
+    from major email provider.""",
 
-    Your response MUST be a valid FormProcessorResponse with:
-    - updated_form: Form with all updated fields
-    - progress: integer 0-100
-    - feedback: string with specific feedback
-    - example: string with example of good answer
-    - next_question: string with next question to ask
-    """
-)
+    """We're focusing on the US market initially, specifically targeting tech hubs
+    like Silicon Valley, New York, and Boston where email overload is a major
+    problem.""",
 
-# Create the analyzer agent
-analyzer = Agent(
-    analyzer_model,
-    result_type=StartupAnalysis,
-    retries=3,
-    system_prompt="""
-    You are an expert startup analyst with deep experience in evaluating early-stage companies.
+    """Our ML models have been trained on over 1 million emails, achieving 95%
+    accuracy in priority detection. We use state-of-the-art NLP for understanding
+    email context.""",
 
-    When analyzing a startup, focus on:
-    1. Market Opportunity
-       - Market size and growth potential
-       - Problem significance and urgency
-       - Target audience validation
+    """Current competition includes traditional email clients and some AI plugins,
+    but none offer our level of intelligent automation and personalization.""",
 
-    2. Product & Technology
-       - Solution uniqueness
-       - Technical feasibility
-       - Competitive advantages
-
-    3. Business Model
-       - Revenue streams clarity
-       - Pricing strategy
-       - Customer acquisition costs
-       - Scalability potential
-
-    4. Execution & Traction
-       - Development stage
-       - Current metrics
-       - Team capabilities
-
-    Provide structured feedback including:
-    - Concise summary of the business
-    - Key strengths that could lead to success
-    - Critical risks that need attention
-    - Actionable recommendations for growth
-
-    Be specific and practical in your analysis.
-    """
-)
+    """We've secured $500K in pre-seed funding and are looking to raise a seed
+    round of $2M to accelerate growth and expand the engineering team."""
+]
 
 
-# Create the main form agent
-form_agent = Agent(
-    form_processor_model,
-    deps_type=FormState,
-    result_type=FormProcessorResponse,
-    retries=3,
-    system_prompt="""
-    You are a form processing assistant that helps gather and structure information.
-    Your task is to:
-    1. Process incoming messages and extract relevant information
-    2. Update form fields based on the extracted information
-    3. Track progress and provide feedback
-    4. Generate appropriate follow-up questions
-    5. When all fields are complete with high-quality information,
-       trigger final analysis
-    """
-)
+# First, add the orchestrator model
+class OrchestratorAction(BaseModel):
+    """Model for orchestrator decisions"""
+    tool_name: str = Field(description="Name of the tool to execute based on the [TOOLS_INFO] message")
+    confidence: float = Field(ge=0, le=1, description="Confidence in tool selection")
+    reasoning: str = Field(description="Why this tool was selected")
 
 
-@form_agent.tool
-async def process_message(ctx: RunContext[FormState], message: str) -> FormProcessorResponse:
-    """Process user message and update form"""
-    # Clean and prepare the message
-    cleaned_message = clean_text(message)
+# Then update the orchestrator class
+class BaseStartupOrchestrator:
+    """Base orchestrator for processing startup information"""
 
-    # Prepare form data with proper sections
-    form_data = {
-        'form': ctx.deps.form.model_dump(),
-        'progress': ctx.deps.progress,
-        'last_question': ctx.deps.last_question
-    }
-
-    # Convert to YAML with sections
-    form_state = to_flat_yaml(form_data, section="Form State")
-    user_message = to_flat_yaml(cleaned_message, section="User Message")
-
-    # Create and clean prompt
-    user_prompt = clean_prompt(f"""
-    {form_state}
-
-    {user_message}
-
-    Instructions:
-    1. Extract relevant information from the message and update appropriate fields
-    2. Ensure business model focuses on revenue generation, not technical details
-    3. Move technical/development information to the stage field
-    4. Calculate progress based on field completion and quality
-    5. Progress should never decrease
-    6. Provide specific feedback on what information is still needed
-    7. Generate a focused follow-up question
-    """)
-
-    logger.debug("Generated prompt structure:")
-    logger.debug(user_prompt)
-
-    # Process message
-    result = await form_processor.run(user_prompt)
-
-    # Ensure progress never decreases
-    new_progress = max(ctx.deps.progress, result.data.progress)
-
-    # Update form state
-    ctx.deps.form = result.data.updated_form
-    ctx.deps.progress = new_progress
-    ctx.deps.last_question = result.data.next_question
-    ctx.deps.feedback = result.data.feedback
-
-    logger.debug(f"Progress updated to: {ctx.deps.progress}%")
-
-    return result.data
-
-
-@form_agent.tool
-async def analyze_startup(ctx: RunContext[FormState]) -> StartupAnalysis:
-    """Analyze the complete startup information"""
-    # Prepare startup data
-    startup_info = to_flat_yaml(ctx.deps.form.model_dump(), section="Startup Information")
-
-    # Create and clean prompt
-    user_prompt = clean_prompt(f"""
-    Please analyze this startup:
-
-    {startup_info}
-    """)
-
-    logger.debug("Generated analysis prompt:")
-    logger.debug(user_prompt)
-
-    # Get analysis from analyzer agent
-    result = await analyzer.run(user_prompt)
-
-    return result.data
-
-
-async def main():
-    # Initialize form state
-    form_state = FormState()
-
-    print("\n🚀 Welcome to the Startup Form Assistant!")
-    print("Processing startup information...\n")
-
-    # Predefined message blocks
-    messages = [
-        # Product and Vision
-        (
-            "SmartMail is an AI-powered email management platform. It leverages advanced machine "
-            "learning to help professionals regain control of their inbox. The core technology "
-            "analyzes email patterns and user behavior to deliver increasingly personalized email "
-            "handling, including smart organization and prioritization."
-        ),
-
-        # Market and Validation
-        (
-            "We've validated our market through extensive research and testing. Our target users "
-            "are busy professionals who handle 100+ emails daily, including executives, "
-            "entrepreneurs, and knowledge workers. The demand is clear – we've conducted in-depth "
-            "interviews with over 50 potential users and built a waitlist of 200 people, including "
-            "employees from Google, Microsoft, and various startups."
-        ),
-
-        # Development Stage
-        (
-            "Development-wise, we're in beta with strong traction – 100 active users are already "
-            "using the platform. We launched our MVP two months ago and are on track for full "
-            "release in Q3 2024. Our technical roadmap is solid, with advanced AI features planned "
-            "for Q4, including sentiment analysis and automated meeting scheduling."
-        ),
-
-        # Business Model
-        (
-            "We've implemented a freemium SaaS model that's already showing promising results. "
-            "The basic tier is free to drive user acquisition, while premium features are "
-            "monetized at $15/month for individuals and $49/user/month for enterprise clients. "
-            "This model is working – we're already generating $2,000 in Monthly Recurring Revenue "
-            "from our early adopters."
-        ),
-
-        # Competitive Advantages
-        (
-            "What sets us apart is our comprehensive feature set: 1) Our AI engine learns and "
-            "adapts to personal communication patterns, 2) Smart templates automatically adjust "
-            "based on recipient and context, 3) We provide a detailed analytics dashboard for "
-            "tracking email productivity, 4) Our automated follow-up system ensures no important "
-            "emails slip through the cracks, and 5) We've implemented enterprise-grade security "
-            "with end-to-end encryption to protect sensitive communications."
-        ),
-
-        # Marketing Strategy
-        (
-            "To grow our user base, we employ a mix of organic, paid, and partnership-driven "
-            "strategies: 1) SEO & content marketing through blog posts, YouTube tutorials, and "
-            "LinkedIn thought leadership, 2) Paid acquisition via Google Ads, Facebook, and "
-            "LinkedIn targeting professionals, 3) Community engagement on Reddit, IndieHackers, "
-            "and relevant Discord groups, 4) Influencer collaborations and affiliate programs "
-            "to drive referrals, 5) ProductHunt and media outreach to gain traction among early "
-            "adopters and tech publications."
-        )
-    ]
-
-    while messages and form_state.progress < 100:
-        # Process current message
-        message = messages.pop(0)  # Take the first message
-
-        print("\n📝 Processing message:")
-        print(f"└─ {message[:100]}...")  # Print first 100 chars of message
-
-        # Process the message
-        result: AgentRunResult[FormProcessorResponse] = await form_agent.run(
-            message,  # Current message as prompt
-            deps=form_state
+    def __init__(self):
+        # Orchestrator's own client for tool selection
+        self.client_agent = PydanticAIClient(
+            model_name="openai/gpt-4-turbo-preview",
+            client_id="startup_orchestrator",
+            user_id="startup_user",
+            verbose=False,
+            retries=2,
+            online=True,
+            max_budget=10,
+            model_settings=ModelSettings(
+                # max_tokens=500,
+                temperature=0.1,
+            )
         )
 
-        print("\n💡 AI Analysis:")
-        print(f"└─ {result.data.feedback}")
-        print(f"\n📊 Progress: {result.data.progress}%")
+        # Store current form state
+        self.current_state: FormState = FormState()
 
-        # Print current form state
-        form_state.print_state()
+        # Define available tools with function names
+        self.tools = [
+            {
+                "desc": "Process and update form info. Use when progress < 100%",
+                "func": self.process_info
+            },
+            {
+                "desc": "Analyze complete startup info. Use when progress = 100%",
+                "func": self.analyze_startup
+            }
+        ]
 
-        # Check if we got analysis results
-        if isinstance(result.data, StartupAnalysis):
-            print("\n📋 Final Analysis:")
-            print(f"└─ {result.data.summary}")
+    def process_info(self, message: str, form_state: FormState) -> FormState:
+        """Process new information and generate follow-up questions"""
+        logger.info("Starting process_info with message: %s", message)
+
+        try:
+            client = PydanticAIClient(
+                model_name="openai/gpt-4-turbo-preview",
+                client_id="info_processor",
+                max_budget=10,
+                model_settings=ModelSettings(temperature=0.3)
+            )
+
+            # Clear the message handler
+            client.message_handler.clear()
+
+            # First, send the system message with instructions
+            client.message_handler.add_message_system(
+                '''
+                You are a helpful assistant that processes startup information and updates form fields.
+
+                IMPORTANT: the form fields are:
+                1. idea_desc: Technical description of product/service and technology
+                2. target_mkt: Target market, user validation, and market size
+                3. biz_model: Revenue model, pricing, traction metrics
+                4. team_info: Team background, funding status, advisors
+
+                YOUR TASK:
+                1. Analyze the [USER_MESSAGE]
+                2. Identify which form field(s) the information belongs to
+                3. APPEND new information to existing content in those fields
+                4. NEVER remove or overwrite existing data
+            ''')
+
+            # Then send the current state
+            client.message_handler.add_message_block(
+                'CURRENT_STATE',
+                self.current_state.model_dump()
+            )
+
+            # Finally send the user message
+            client.message_handler.add_message_block(
+                'USER_MESSAGE',
+                message
+            )
+
+            try:
+                # Get updated state from AI
+                new_state: FormState = client.generate(result_type=FormState)
+                logger.info("Raw AI response: %s", new_state.model_dump())
+
+                if not new_state or not new_state.form:
+                    logger.error("AI returned invalid state")
+                    # Create default state with message in idea_desc
+                    new_state = FormState(
+                        form=StartupForm(idea_desc=message),
+                        progress=25,
+                        feedback="Added new information",
+                        next_question="Tell me more about your startup",
+                        confidence=0.5
+                    )
+
+                # Create a new state preserving history
+                updated_state = FormState(
+                    form=new_state.form,
+                    progress=new_state.progress,
+                    feedback=new_state.feedback or "Information processed",
+                    next_question=new_state.next_question or "Tell me more",
+                    prev_question=self.current_state.next_question,
+                    prev_answer=message,
+                    last_msg=message,
+                    confidence=new_state.confidence or 0.8
+                )
+
+                # Update current state
+                self.current_state = updated_state
+                return self.current_state
+
+            except Exception as e:
+                logger.error("Error processing AI response: %s", str(e))
+                # Create fallback state
+                fallback_state = FormState(
+                    form=StartupForm(idea_desc=message),
+                    progress=25,
+                    feedback="Error occurred, but saved information",
+                    next_question="Please continue telling me about your startup",
+                    confidence=0.5
+                )
+                self.current_state = fallback_state
+                return fallback_state
+
+        except Exception as e:
+            logger.error("Error in process_info: %s", str(e))
+            return self.current_state
+
+    def analyze_startup(self, message: str, form_state: FormState) -> StartupFormResponse:
+        """Generate comprehensive startup analysis"""
+        client = PydanticAIClient(
+            model_name="openai/gpt-4-turbo-preview",
+            client_id="startup_analyzer",
+            model_settings=ModelSettings(temperature=0.7)
+        )
+
+        # Clear the message handler
+        client.message_handler.clear()
+
+        client.message_handler.add_message_system(
+            """You are a startup analyst. Generate a comprehensive analysis:
+            1. Evaluate overall viability and potential
+            2. Identify key strengths and advantages
+            3. Highlight areas for improvement
+            4. Recommend specific next steps
+            5. Score different aspects of the startup
+            """
+        )
+
+        # Add all available information
+        client.message_handler.add_message_block(
+            "STARTUP_INFO",
+            {
+                "idea": self.current_state.form.idea_desc,
+                "market": self.current_state.form.target_mkt,
+                "business": self.current_state.form.biz_model,
+                "team": self.current_state.form.team_info,
+                "latest_update": message
+            }
+        )
+
+        return client.generate(result_type=StartupFormResponse)
+
+    def determine_action(self, message: str) -> FormState:
+        """Determine and execute the next action based on message and form state"""
+        logger.info("Starting determine_action with message: %s", message)
+
+        # Get tools info with function names
+        tools_info = [
+            {
+                "name": t['func'].__name__,
+                "desc": t['desc']
+            }
+            for t in self.tools
+        ]
+
+        # Clear the message handler
+        self.client_agent.message_handler.clear()
+
+        # Add tools and context info
+        self.client_agent.message_handler.add_message_system(
+            '''
+            You are an orchestrator that decides which tool to use for processing startup information.
+
+            Available tools:
+            1. process_info: Use this when the form is incomplete (progress < 100%)
+            2. analyze_startup: Use this only when all information is collected (progress = 100%)
+
+            Your task:
+            1. Review the current form state and progress
+            2. Select the appropriate tool based on completion status
+            3. Return the tool name exactly as shown above
+            '''
+        )
+
+        self.client_agent.message_handler.add_message_block(
+            "TOOLS_INFO",
+            tools_info
+        )
+
+        self.client_agent.message_handler.add_message_block(
+            "CONTEXT",
+            {
+                "current_progress": self.current_state.progress,
+                "form_state": self.current_state.model_dump()
+            }
+        )
+
+        self.client_agent.message_handler.add_message_block(
+            "USER_MESSAGE",
+            message
+        )
+
+        try:
+            # Get tool selection from AI
+            result: OrchestratorAction = self.client_agent.generate(
+                result_type=OrchestratorAction
+            )
+
+            if not result or not result.tool_name:
+                logger.error("AI returned invalid tool selection")
+                # Default to process_info if progress < 100%
+                result = OrchestratorAction(
+                    tool_name="process_info",
+                    confidence=0.8,
+                    reasoning="Defaulting to process_info due to incomplete form"
+                )
+
+            logger.info("Orchestrator selected function: %s with confidence %f",
+                        result.tool_name, result.confidence)
+            logger.info("Reasoning: %s", result.reasoning)
+
+            # Find tool by name
+            tool = next((t for t in self.tools if t['func'].__name__ == result.tool_name), None)
+            if tool:
+                logger.info("Executing function: %s", result.tool_name)
+                try:
+                    self.current_state = tool["func"](message, self.current_state)
+                except Exception as e:
+                    logger.error("Error executing function: %s", str(e))
+                    # On error, try to continue with current state
+                    return self.current_state
+            else:
+                logger.error("Invalid function name: %s", result.tool_name)
+
+        except Exception as e:
+            logger.error("Error in determine_action: %s", str(e))
+            # On error, default to process_info
+            try:
+                self.current_state = self.process_info(message, self.current_state)
+            except Exception as inner_e:
+                logger.error("Error in fallback processing: %s", str(inner_e))
+
+        return self.current_state
+
+
+def print_form_state(state: FormState) -> None:
+    """Print detailed form state"""
+    print("\n📋 Current Form State:")
+    print("-------------------")
+
+    form_data = state.form.model_dump()
+    for field, content in form_data.items():
+        filled = "✅" if content.strip() else "❌"
+        print(f"\n{filled} {field}:")
+        if content.strip():
+            print(f"   {content}")
+
+    print(f"\n📊 Progress: {state.progress}%")
+    print(f"\n💭 Feedback: {state.feedback}")
+
+    if state.prev_question and state.prev_answer:
+        print("\n📝 Previous Q&A:")
+        print(f"Q: {state.prev_question}")
+        print(f"A: {state.prev_answer}")
+
+    print(f"\n❓ Next Question: {state.next_question}")
+
+
+def main():
+    # Initialize orchestrator and form state
+    orchestrator = BaseStartupOrchestrator()
+    state = FormState()
+    available_messages = STARTUP_MESSAGES.copy()
+
+    print("\n🚀 Welcome to the Startup Analyzer!")
+    print("Processing startup information using predefined messages...\n")
+
+    while (state.progress < 100 and available_messages):
+        message = random.choice(available_messages)
+        available_messages.remove(message)
+
+        print("\n💬 Processing new information...")
+        print(f"Progress: {state.progress}%")
+        print(f"Next question: {state.next_question}")
+        print(f"Message: {message}\n")
+
+        state = orchestrator.determine_action(message)
+        print_form_state(state)
+        print(f"\n📈 Confidence: {state.confidence:.2%}")
+
+        time.sleep(1)
+
+    if state.progress >= 100:
+        try:
+            print("\n🔍 Generating startup analysis...")
+            result = orchestrator.analyze_startup(state.next_question, state)
+
+            print("\n📊 Analysis Results")
+            print("================")
+            print(f"\n💯 Overall Score: {result.score}/10")
+
+            if result.market_potential:
+                print(f"📈 Market Potential: {result.market_potential}/10")
+
+            print(f"\n💡 Feedback:\n{result.feedback}")
+
             print("\n💪 Strengths:")
-            for strength in result.data.strengths:
-                print(f"└─ {strength}")
-            print("\n⚠️ Risks:")
-            for risk in result.data.risks:
-                print(f"└─ {risk}")
-            print("\n🎯 Recommendations:")
-            for rec in result.data.recommendations:
-                print(f"└─ {rec}")
-            break
+            for strength in result.strengths:
+                print(f"✓ {strength}")
 
-    # If we've reached 100% but haven't got analysis yet, perform final analysis
-    if form_state.progress >= 100 and not isinstance(result.data, StartupAnalysis):
-        print("\n📝 Form completed! Generating final analysis...")
-        final_result: StartupAnalysis = await analyze_startup(RunContext(
-            model=form_processor_model,
-            usage=Usage(
-                requests=0,
-                request_tokens=0,
-                response_tokens=0,
-                total_tokens=0
-            ),
-            prompt="Perform final analysis",
-            deps=form_state
-        ))
+            print("\n⚠️ Areas for Improvement:")
+            for weakness in result.weaknesses:
+                print(f"! {weakness}")
 
-        # Print final analysis with improved formatting
-        print("\n" + "=" * 50)
-        print("📋 STARTUP ANALYSIS")
-        print("=" * 50)
+            print("\n🎯 Next Steps:")
+            for step in result.next_steps:
+                print(f"→ {step}")
 
-        print("\n📌 Summary:")
-        print("-" * 50)
-        print(final_result.summary)
-
-        print("\n💪 Key Strengths:")
-        print("-" * 50)
-        for strength in final_result.strengths:
-            print(f"• {strength}")
-
-        print("\n⚠️ Critical Risks:")
-        print("-" * 50)
-        for risk in final_result.risks:
-            print(f"• {risk}")
-
-        print("\n🎯 Action Items:")
-        print("-" * 50)
-        for rec in final_result.recommendations:
-            print(f"• {rec}")
-
-        print("=" * 50)
+        except Exception as e:
+            print(f"\n❌ Error in analysis: {str(e)}")
+    else:
+        print("\n⚠️ Not enough information for analysis")
+        print_form_state(state)
 
 
 if __name__ == "__main__":
-    import asyncio
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n\nThank you for using the Startup Form Assistant! 👋")
-    except Exception as e:
-        print(f"\n❌ An error occurred: {str(e)}")
+    main()

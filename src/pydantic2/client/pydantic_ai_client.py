@@ -191,6 +191,7 @@ class PydanticAIClient:
 
         # Check budget before making the request
         self._check_budget()
+        self.message_handler.add_model_schema(result_type)
 
         self._log_request(request_id)
         start_time = time.perf_counter()
