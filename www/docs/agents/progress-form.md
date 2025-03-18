@@ -279,7 +279,7 @@ processor.usage_info.export_json("usage_data.json")
 Progress Form automatically tracks and updates model pricing information:
 
 ```python
-from src.pydantic2.client.usage.model_prices import ModelPriceManager
+from pydantic2.client.usage.model_prices import ModelPriceManager
 
 # Get model prices
 price_manager = ModelPriceManager()
