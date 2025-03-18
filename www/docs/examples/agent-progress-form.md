@@ -278,22 +278,12 @@ client = PydanticAIClient(
 ```python
 client = PydanticAIClient(
     retries=5,  # More retries
-    timeout=30,  # Longer timeout
     online=True,  # Use online mode
     max_budget=5,  # Higher budget
 )
 ```
 
-3. **Logging and Monitoring**
-```python
-client = PydanticAIClient(
-    verbose=True,  # Detailed logging
-    log_level="DEBUG",
-    metrics_enabled=True,
-)
-```
-
-4. **Different Clients for Different Tasks**
+3. **Different Clients for Different Tasks**
 ```python
 class MultiClientProcessor(BaseProgressForm):
     def __init__(self, user_id: str):

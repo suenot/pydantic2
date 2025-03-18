@@ -33,7 +33,10 @@ class StartupFormProcessor(BaseProgressForm):
             user_id=user_id,
             client_id="startup_form",
             form_class=StartupForm,
-            verbose=False,
+            form_prompt="""
+            Ask in Russian.
+            """,
+            verbose=True,
             verbose_clients=False
         )
 

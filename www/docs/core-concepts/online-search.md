@@ -78,12 +78,6 @@ You can customize online search behavior:
 ```python
 client = PydanticAIClient(
     online=True,
-    online_config={
-        "max_results": 5,        # Maximum number of search results to use
-        "search_provider": "default",  # Search provider to use
-        "citation_style": "url",  # How to format citations
-        "timeout": 30             # Search timeout in seconds
-    }
 )
 ```
 

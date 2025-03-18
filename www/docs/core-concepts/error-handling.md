@@ -200,7 +200,7 @@ except ValidationError as e:
 3. Implement appropriate retry logic
 4. Have fallback strategies for critical operations
 5. Monitor error patterns
-6. Set appropriate timeouts and budgets
+6. Set appropriate budgets
 7. Validate responses carefully
 
 ## Next Steps

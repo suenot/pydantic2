@@ -54,6 +54,7 @@ class BaseProgressForm(ABC):
         verbose_clients: bool = False,
         form_class: type[BaseModel] = BaseModel,  # type: ignore
         client_agent: Optional[PydanticAIClient] = None,
+        form_prompt: str = "",
     ):
         self.user_id = user_id
         self.client_id = client_id
@@ -74,6 +75,9 @@ class BaseProgressForm(ABC):
         # Initialize test agent (to be configured by child class)
         self.test_agent_client = None
         self.test_agent_prompt = None
+
+        # Initialize form prompt
+        self.form_prompt = form_prompt
 
         # Set logger level
         self.set_verbose()
@@ -212,7 +216,7 @@ class BaseProgressForm(ABC):
 
         self.test_agent_client.message_handler.add_message_block(
             "CURRENT_STATE",
-            self.current_state.model_dump()
+            self.current_state.model_dump(),
         )
 
         # Generate response
@@ -239,6 +243,7 @@ class BaseProgressForm(ABC):
             3. Preserve existing information, only append new details
             4. Focus on the form fields to update but check others if relevant
             5. Return the updated form state
+            6. Pay attention to the [CUSTOM_RULES]
 
             PROGRESS:
             - Always update the progress value
@@ -275,6 +280,10 @@ class BaseProgressForm(ABC):
             message
         )
 
+        client.message_handler.add_message_block(
+            "CUSTOM_RULES",
+            self.form_prompt
+        )
         try:
             new_state: FormState = client.generate(result_type=FormState[self.form_class])
 
@@ -368,6 +377,7 @@ class BaseProgressForm(ABC):
                 )
 
                 tool_name = orchestrator_result.tool_name
+                tool_name = tool_name.replace("functions.", "")
 
                 self._log(
                     "Orchestrator selected tool: %s (confidence: %.2f)",
