@@ -85,7 +85,11 @@ class VersionControl:
         logger.debug(f"[DEBUG] Current version: {self.current_version}")
 
         if semver.compare(latest_version, self.current_version) > 0:
-            logger.warning(f"🚀 A new version {latest_version} is available! "
-                           f"You are using {self.current_version}. Consider updating.")
+            logger.warning(
+                f"🚀 A new version {latest_version} is available! "
+                f"You are using {self.current_version}. Consider updating."
+            )
         else:
-            logger.debug(f"✅ You are using the latest version: {self.current_version}.")
+            logger.debug(
+                f"✅ You are using the latest version: {self.current_version}."
+            )
