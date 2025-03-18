@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from ...__pack__ import __version__, __name__
+from ..logger import logger
 
 
 class VersionControl:
@@ -76,14 +77,15 @@ class VersionControl:
         if cache_age > self.CACHE_DURATION:
             latest_version = self._fetch_latest_version()
             self._save_cache(latest_version)
-            print(f"[DEBUG] Fetched latest version: {latest_version}")
+            logger.debug(f"[DEBUG] Fetched latest version: {latest_version}")
         else:
             latest_version = self.cached_version
-            print(f"[DEBUG] Using cached version: {latest_version}")
+            logger.debug(f"[DEBUG] Using cached version: {latest_version}")
 
-        print(f"[DEBUG] Current version: {self.current_version}")
+        logger.debug(f"[DEBUG] Current version: {self.current_version}")
+
         if semver.compare(latest_version, self.current_version) > 0:
-            print(f"🚀 A new version {latest_version} is available! "
-                  f"You are using {self.current_version}. Consider updating.")
+            logger.warning(f"🚀 A new version {latest_version} is available! "
+                           f"You are using {self.current_version}. Consider updating.")
         else:
-            print(f"✅ You are using the latest version: {self.current_version}.")
+            logger.debug(f"✅ You are using the latest version: {self.current_version}.")

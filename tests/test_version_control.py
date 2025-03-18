@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 from datetime import datetime, timedelta
 from src.pydantic2.utils.version_control.check import VersionControl
+from src.pydantic2.utils.logger import logger
 
 
 class TestVersionControl(unittest.TestCase):
@@ -25,15 +26,16 @@ class TestVersionControl(unittest.TestCase):
         # Mock the latest version to be greater than the current version
         mock_fetch_latest_version.return_value = "1.0.4"
 
-        with patch('builtins.print') as mock_print:
+        with patch.object(logger, 'debug') as mock_debug, \
+                patch.object(logger, 'warning') as mock_warning:
             self.version_control.check_for_update()
             # Verify that we fetched and saved the new version
             mock_fetch_latest_version.assert_called_once()
             mock_save_cache.assert_called_once_with("1.0.4")
             # Verify debug messages
-            mock_print.assert_any_call("[DEBUG] Fetched latest version: 1.0.4")
-            mock_print.assert_any_call("[DEBUG] Current version: 1.0.3")
-            mock_print.assert_any_call(
+            mock_debug.assert_any_call("[DEBUG] Fetched latest version: 1.0.4")
+            mock_debug.assert_any_call("[DEBUG] Current version: 1.0.3")
+            mock_warning.assert_called_with(
                 "🚀 A new version 1.0.4 is available! "
                 "You are using 1.0.3. Consider updating."
             )
@@ -52,11 +54,11 @@ class TestVersionControl(unittest.TestCase):
         # Mock the latest version to be the same as the current version
         mock_fetch_latest_version.return_value = "1.0.3"
 
-        with patch('builtins.print') as mock_print:
+        with patch.object(logger, 'debug') as mock_debug:
             self.version_control.check_for_update()
-            mock_print.assert_any_call("[DEBUG] Using cached version: 1.0.3")
-            mock_print.assert_any_call("[DEBUG] Current version: 1.0.3")
-            mock_print.assert_any_call(
+            mock_debug.assert_any_call("[DEBUG] Using cached version: 1.0.3")
+            mock_debug.assert_any_call("[DEBUG] Current version: 1.0.3")
+            mock_debug.assert_any_call(
                 "✅ You are using the latest version: 1.0.3."
             )
 
