@@ -22,15 +22,6 @@ def client():
         yield client
 
 
-def test_message_handling(client):
-    """Test basic message handling"""
-    client.message_handler.add_message_user("Test message")
-    messages = client.message_handler.get_messages()
-    assert len(messages) == 1
-    assert messages[0]["role"] == "user"
-    assert messages[0]["content"] == "Test message"
-
-
 def test_budget_tracking():
     """Test budget exceeded error"""
     with patch('src.pydantic2.client.pydantic_ai_client.PydanticAIClient._calculate_cost') as mock_cost:

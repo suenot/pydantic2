@@ -8,6 +8,7 @@ from peewee import (
     FloatField, DateTimeField, TextField, AutoField, BooleanField, DoesNotExist
 )
 from ...utils.logger import logger
+import sqlite3
 
 # Database configuration
 THIS_DIR = Path(__file__).parent.parent.parent
@@ -15,12 +16,24 @@ DB_DIR = THIS_DIR / 'db'
 DB_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DB_DIR / "models.db"
 
+# Singleton database instance
+_db = None
+
+
+def get_db():
+    """Get or create database connection singleton"""
+    global _db
+    if _db is None:
+        _db = SqliteDatabase(DB_PATH)
+    return _db
+
+
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/models"
 
 
 class BaseModel(Model):
     class Meta:
-        database = SqliteDatabase(DB_PATH)
+        database = get_db()
 
 
 class PriceUpdate(BaseModel):
@@ -78,8 +91,9 @@ class ModelPriceManager:
         Args:
             force_update: Force update of model prices even if they were recently updated
         """
-        self.db = SqliteDatabase(DB_PATH)
-        self.db.connect()
+        self.db = get_db()
+        if self.db.is_closed():
+            self.db.connect()
         self.db.create_tables([LLMModel, PriceUpdate], safe=True)
 
         # Update prices during initialization if needed
@@ -240,7 +254,11 @@ class ModelPriceManager:
 
     def close(self):
         """Close the database connection."""
-        self.db.close()
+        if self.db and not self.db.is_closed():
+            try:
+                self.db.close()
+            except sqlite3.Error:
+                pass
 
 
 if __name__ == "__main__":

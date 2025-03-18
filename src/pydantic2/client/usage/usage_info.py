@@ -14,7 +14,16 @@ DB_DIR = THIS_DIR / 'db'
 DB_DIR.mkdir(parents=True, exist_ok=True)
 DEFAULT_DB_PATH = DB_DIR / "usage.db"
 
-db = SqliteDatabase(DEFAULT_DB_PATH)
+# Singleton database instance
+_db = None
+
+
+def get_db():
+    """Get or create database connection singleton"""
+    global _db
+    if _db is None:
+        _db = SqliteDatabase(DEFAULT_DB_PATH)
+    return _db
 
 
 class UsageLog(Model):
@@ -37,7 +46,7 @@ class UsageLog(Model):
     updated_at = DateTimeField(default=datetime.now)
 
     class Meta:
-        database = db
+        database = get_db()
 
 
 class UsageInfo:
@@ -49,14 +58,14 @@ class UsageInfo:
         Args:
             client_id: Optional client identifier
             user_id: Optional user identifier
-            db_path: Path to the SQLite database file
         """
         self.client_id = client_id
         self.user_id = user_id
-        self.db = db
+        self.db = get_db()
         try:
-            db.connect()
-            db.create_tables([UsageLog], safe=True)
+            if self.db.is_closed():
+                self.db.connect()
+            self.db.create_tables([UsageLog], safe=True)
             logger.debug("Usage info initialized with database")
         except Exception as e:
             logger.error(f"Database error: {e}")
@@ -78,7 +87,7 @@ class UsageInfo:
 
         try:
             if self.db.is_closed:
-                self.db = db
+                self.db = get_db()
 
             UsageLog.create(
                 request_id=request_id,
@@ -108,7 +117,7 @@ class UsageInfo:
 
         try:
             if self.db.is_closed:
-                self.db = db
+                self.db = get_db()
 
             prompt_tokens = usage_info.get('prompt_tokens', 0)
             completion_tokens = usage_info.get('completion_tokens', 0)
@@ -144,7 +153,7 @@ class UsageInfo:
 
         try:
             if self.db.is_closed:
-                self.db = db
+                self.db = get_db()
 
             UsageLog.update(
                 error_message=error_message,
@@ -170,7 +179,7 @@ class UsageInfo:
 
         try:
             if self.db.is_closed:
-                self.db = db
+                self.db = get_db()
 
             overall_stats = UsageLog.select(
                 fn.COUNT(UsageLog.id).alias('total_requests'),
@@ -219,7 +228,7 @@ class UsageInfo:
 
     def close(self):
         """Close the database connection."""
-        if self.db:
+        if self.db and not self.db.is_closed():
             try:
                 self.db.close()
             except sqlite3.Error:
