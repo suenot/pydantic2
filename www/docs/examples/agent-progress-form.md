@@ -40,7 +40,10 @@ class StartupFormProcessor(BaseProgressForm):
             client_id="startup_form",
             form_class=StartupForm,
             verbose=False,
-            verbose_clients=False
+            verbose_clients=False,
+            form_prompt="""
+                Ask in Russian.
+            """,
         )
 
         # Register tools
