@@ -8,7 +8,6 @@
         "docs:dev": "mkdocs serve -f www/mkdocs.yml",
         "tests": "pip install -e . && pytest tests/ -v",
         "format": "black . && isort . && flake8 --ignore E203",
-        "install": "pip install -r requirements.txt && pip install -e .",
         "audit": "pip-audit --group-by=package --group-by-file --ignore=CVE-2024-18266",
         "lint": "flake8 --ignore E203",
         "sort": "isort .",
@@ -17,7 +16,8 @@
         "cli:view-all": "pydantic2 --view-all",
         "cli:help": "pydantic2 --help",
         "clean": "rm -rf dist/* build/* *.egg-info",
-        "build": "yarn clean && python -m build && pip install dist/*.whl && pip show -f pydantic2"
+        "make:install": "pip install -r requirements.txt && pip install -e .",
+        "make:build": "yarn clean && python -m build && pip install dist/*.whl && pip show -f pydantic2"
     },
     "devDependencies": {
         "openrouter-commit": "latest"
