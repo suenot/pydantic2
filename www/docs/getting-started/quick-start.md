@@ -18,6 +18,47 @@ For most LLM providers, you'll need to set up API keys. You can use environment 
 export OPENROUTER_API_KEY=your_api_key_here
 ```
 
+
+## System Architecture
+
+```mermaid
+graph TD
+    subgraph Client Layer
+        A[Client Request] --> B[PydanticAIClient]
+    end
+
+    subgraph Usage Tracking
+        B --> C[UsageInfo]
+        B --> D[ModelPriceManager]
+        C --> E[Track Request]
+        C --> F[Track Response]
+        D --> G[Check Pricing]
+        D --> H[Budget Control]
+    end
+
+    subgraph Storage
+        E --> I[(Usage DB)]
+        F --> I
+        G --> J[(Models DB)]
+    end
+
+    subgraph Analysis
+        I --> K[Usage Stats]
+        J --> L[Price Updates]
+        K --> M[Reports]
+        L --> M
+    end
+
+    style A fill:#9cf
+    style B fill:#9cf
+    style C fill:#f96
+    style D fill:#f96
+    style I fill:#bbf
+    style J fill:#bbf
+    style M fill:#9cf
+```
+
+
 ## Basic Usage
 
 Here's a complete example that demonstrates the core functionality:

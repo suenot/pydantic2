@@ -1,5 +1,27 @@
 # Message Handling
 
+## Message Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant MH as MessageHandler
+    participant AI as AI Model
+    participant R as Response
+
+    C->>MH: Add System Message
+    C->>MH: Add User Message
+    C->>MH: Add Data Block
+    MH->>MH: Format Messages
+    MH->>AI: Send Formatted Prompt
+    AI->>R: Generate Response
+    R->>C: Return Result
+
+    Note over MH: Manages message history<br/>and formatting
+```
+
+## Overview
+
 The `message_handler` is the core component for building conversations with AI models in Pydantic2. It manages different types of messages and formats them appropriately.
 
 ## Message Types

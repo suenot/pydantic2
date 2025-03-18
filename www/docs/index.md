@@ -1,6 +1,28 @@
-# Pydantic2 🚀
+# Welcome to Pydantic2
 
 A powerful Python framework for building AI applications with structured responses, powered by Pydantic AI and OpenRouter.
+
+![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
+
+## Quick Links
+
+- [Installation](getting-started/installation.md)
+- [Quick Start](getting-started/quick-start.md)
+- [Configuration](getting-started/configuration.md)
+- [Message Handling](core-concepts/message-handling.md)
+- [Type-Safe Responses](core-concepts/type-safe-responses.md)
+- [Usage & Cost](core-concepts/usage/info.md)
+
+## Core Features
+
+- Type-safe responses from AI models
+- Automatic validation and parsing
+- Comprehensive usage tracking
+- Budget management
+- Error handling
+- Online search capabilities
+
+For more details, check out our [Core Concepts](core-concepts/message-handling.md) section.
 
 ![Pydantic2](https://raw.githubusercontent.com/markolofsen/pydantic2/main/assets/cover.png)
 
@@ -102,11 +124,6 @@ print(f"Total cost: ${stats.get('total_cost', 0):.4f}")
 - [Online Search](core-concepts/online-search.md) - Enable real-time internet access
 - [Budget Management](core-concepts/budget-management.md) - Control your API costs
 - [Error Handling](core-concepts/error-handling.md) - Handle exceptions gracefully
-
-## API Reference
-
-- [Client](api/client.md) - Main client interface
-- [Usage Tracking](api/usage.md) - Monitor costs and usage
 
 ## CLI Tools
 

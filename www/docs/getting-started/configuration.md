@@ -25,7 +25,7 @@ client = PydanticAIClient(
 | `user_id` | str | Yes | End-user identifier |
 | `api_key` | str | No* | OpenRouter API key (can be set via env var) |
 
-*API key can be set via `OPENROUTER_API_KEY` environment variable
+> API key can be set via `OPENROUTER_API_KEY` environment variable
 
 ### Optional Parameters
 
@@ -86,8 +86,6 @@ print(f"User cost: ${user_stats['total_cost']:.4f}")
 ```bash
 # Set common configuration values
 export OPENROUTER_API_KEY="your-api-key"
-export PYDANTIC_CLIENT_ID="my_app"
-export PYDANTIC_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
 ## Message Handling

@@ -10,21 +10,21 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deepPurple
+      primary: black
       accent: blue
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deepPurple
+      primary: black
       accent: blue
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.instant
-    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
     - navigation.indexes
@@ -73,16 +73,22 @@ nav:
   - Core Concepts:
     - Message Handling: core-concepts/message-handling.md
     - Type-Safe Responses: core-concepts/type-safe-responses.md
+    - Usage & Cost:
+      - Overview: core-concepts/usage/info.md
+      - Model Pricing: core-concepts/usage/model-pricing.md
+      - Request Tracking: core-concepts/usage/request-tracking.md
     - Online Search: core-concepts/online-search.md
     - Budget Management: core-concepts/budget-management.md
     - Error Handling: core-concepts/error-handling.md
-  - CLI Tools: cli.md
-  - API Reference:
-    - Client: api/client.md
-    - Usage: api/usage.md
+  - Agents:
+    - Progress Form: agents/progress-form.md
+  - Integrations:
+    - Django REST: integrations/django-drf.md
   - Examples:
     - Basic Usage: examples/basic-usage.md
     - Chat Completion: examples/chat-completion.md
+    - Agent Progress Form: examples/agent-progress-form.md
+  - CLI Tools: cli.md
 
 plugins:
   - search
@@ -96,7 +102,7 @@ plugins:
             heading_level: 2
             docstring_style: google
   - git-revision-date-localized:
-      type: timeago
+      type: datetime
   - minify:
       minify_html: true
       minify_js: true

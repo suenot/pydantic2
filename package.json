@@ -5,7 +5,7 @@
         "commit": "npx openrouter-commit -run",
         "commit2": "git add . && git commit -m 'fixes' && git push",
         "docs:build": "mkdocs build -f www/mkdocs.yml",
-        "docs:serve": "mkdocs serve -f www/mkdocs.yml",
+        "docs:dev": "mkdocs serve -f www/mkdocs.yml",
         "tests": "pip install -e . && pytest tests/ -v",
         "format": "black . && isort . && flake8 --ignore E203",
         "install": "pip install -r requirements.txt && pip install -e .",

@@ -1,5 +1,31 @@
 # Error Handling
 
+## Error Flow
+
+```mermaid
+flowchart TD
+    A[Client Request] --> B{Try Request}
+    B -->|Success| C[Return Response]
+    B -->|Error| D{Error Type}
+
+    D -->|API Error| E[APIError]
+    D -->|Rate Limit| F[RateLimitError]
+    D -->|Budget| G[BudgetExceededError]
+    D -->|Validation| H[ValidationError]
+    D -->|Other| I[BaseError]
+
+    E & F & G & H & I --> J[Error Handler]
+    J -->|Retry Policy| K{Can Retry?}
+    K -->|Yes| B
+    K -->|No| L[Raise Error]
+
+    style B fill:#f96
+    style D fill:#f96
+    style K fill:#f96
+```
+
+## Overview
+
 Pydantic2 provides a comprehensive error handling system to manage various failure scenarios.
 
 ## Exception Hierarchy
