@@ -10,9 +10,10 @@ questionary
 semver
 pip-audit
 safety
+python-dotenv
 
 # Runtime dependencies
-pydantic-ai
+pydantic-ai==0.0.43
 colorlog
 pyyaml
 peewee

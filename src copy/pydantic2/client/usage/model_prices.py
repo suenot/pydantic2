@@ -24,13 +24,7 @@ def get_db():
     """Get or create database connection singleton"""
     global DB_INSTANCE
     if DB_INSTANCE is None:
-        DB_INSTANCE = SqliteDatabase(
-            DB_PATH,
-            pragmas={
-                'journal_mode': 'wal',      # Write-ahead logging for better concurrency
-                'foreign_keys': 1           # Enforce foreign key constraints
-            }
-        )
+        DB_INSTANCE = SqliteDatabase(DB_PATH)
     return DB_INSTANCE
 
 

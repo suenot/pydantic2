@@ -1,7 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from src.pydantic2.agents.progress_form import BaseProgressForm
+from pydantic2.agents.progress_form import BaseProgressForm
 
 
 class StartupForm(BaseModel):

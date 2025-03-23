@@ -1,6 +1,6 @@
-from typing import List, Optional, Any
+from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
-from src.pydantic2 import PydanticAIClient, ModelSettings
+from pydantic2 import PydanticAIClient, ModelSettings
 from dotenv import load_dotenv
 import random
 import time

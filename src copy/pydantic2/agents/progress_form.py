@@ -1,10 +1,9 @@
-from typing import List, Callable, Optional, TypeVar, Generic, Dict, Any, Tuple
+from typing import List, Callable, Optional, TypeVar, Generic
 from pydantic import BaseModel, Field, ConfigDict
 from src.pydantic2 import PydanticAIClient, ModelSettings
 import logging
 import inspect
 from abc import ABC
-from contextlib import contextmanager
 from .session_db_manager import SessionDBManager
 
 # Configure logging
@@ -57,7 +56,6 @@ class BaseProgressForm(ABC):
         form_class: type[BaseModel] = BaseModel,  # type: ignore
         client_agent: Optional[PydanticAIClient] = None,
         form_prompt: str = "",
-        default_session_id: str = None,
     ):
         self.user_id = user_id
         self.client_id = client_id
@@ -65,13 +63,9 @@ class BaseProgressForm(ABC):
         self.verbose = verbose
         self.verbose_clients = verbose_clients
         self.form_class = form_class
-        self._state_dirty = False  # Track if state has changed
-
-        # Client pool to reduce instantiation overhead
-        self._client_pool = {}
 
         # Initialize DB manager with optional session_id
-        self.db_manager = SessionDBManager(default_session_id, verbose=verbose)
+        self.db_manager = SessionDBManager()
 
         # Try to restore session or create a new one
         self._restore_or_initialize_session(form_class)
@@ -102,21 +96,17 @@ class BaseProgressForm(ABC):
             form_class=form_class.__name__
         )
 
-        # Try to get the latest state with caching
-        self._restore_latest_state_from_db()
-
-    def _restore_latest_state_from_db(self):
-        """Restore latest state from database with error handling"""
-        state_data = self.db_manager.get_latest_state(use_cache=True)
+        # Try to get the latest state
+        state_data = self.db_manager.get_latest_state()
 
         if state_data:
             try:
                 # Restore form from state data
                 form_data = state_data.get('form', {})
-                form = self.form_class(**form_data)
+                form = form_class(**form_data)
 
                 # Create state with restored form
-                self.current_state = FormState[self.form_class](
+                self.current_state = FormState[form_class](
                     form=form,
                     progress=state_data.get('progress', 0),
                     prev_question=state_data.get('prev_question', ''),
@@ -128,37 +118,14 @@ class BaseProgressForm(ABC):
                         'next_question_explanation', ''
                     )
                 )
-                self._log("Restored session state")
-                self._state_dirty = False
+                self._log(f"Restored session state with progress: {self.current_state.progress}%")
                 return
             except Exception as e:
                 self._log(f"Error restoring session: {e}", level="warning")
 
         # Initialize new state if could not restore
-        self.current_state = FormState[self.form_class](form=self.form_class())
+        self.current_state = FormState[form_class](form=form_class())
         self._log("Initialized new session state")
-        self._state_dirty = True  # Mark as dirty to save initial state
-
-    @contextmanager
-    def temporary_session(self, session_id: str):
-        """Context manager for temporarily switching to another session
-
-        Args:
-            session_id: The session ID to temporarily switch to
-        """
-        with self.db_manager.temporary_session(session_id):
-            old_state = self.current_state
-            old_dirty = self._state_dirty
-
-            # Restore state from the temporary session
-            self._restore_latest_state_from_db()
-
-            try:
-                yield
-            finally:
-                # Restore original state
-                self.current_state = old_state
-                self._state_dirty = old_dirty
 
     def _restore_session_state(self, session_id: str) -> bool:
         """Restore session state from a specific session ID
@@ -173,12 +140,36 @@ class BaseProgressForm(ABC):
         self.db_manager.session_id = session_id
         self.db_manager._session = None
 
-        # Clear client pool when changing sessions
-        self._client_pool = {}
+        # Try to get the latest state
+        state_data = self.db_manager.get_latest_state()
 
-        # Try to restore from the database
-        result = self._restore_latest_state_from_db()
-        return result is not None
+        if not state_data:
+            self._log(f"No state found for session {session_id}", level="warning")
+            return False
+
+        try:
+            # Restore form from state data
+            form_data = state_data.get('form', {})
+            form = self.form_class(**form_data)
+
+            # Create state with restored form
+            self.current_state = FormState[self.form_class](
+                form=form,
+                progress=state_data.get('progress', 0),
+                prev_question=state_data.get('prev_question', ''),
+                prev_answer=state_data.get('prev_answer', ''),
+                feedback=state_data.get('feedback', ''),
+                confidence=state_data.get('confidence', 0.0),
+                next_question=state_data.get('next_question', ''),
+                next_question_explanation=state_data.get(
+                    'next_question_explanation', ''
+                )
+            )
+            self._log(f"Restored session state with progress: {self.current_state.progress}%")
+            return True
+        except Exception as e:
+            self._log(f"Error restoring session: {e}", level="warning")
+            return False
 
     @property
     def session_id(self) -> str:
@@ -227,45 +218,60 @@ class BaseProgressForm(ABC):
         # Store old session ID in case restoration fails
         old_session_id = self.db_manager.session_id
 
-        try:
-            # Set new session ID
-            self.db_manager.session_id = session_id
-            self.db_manager._session = None
+        # Set new session ID
+        self.db_manager.session_id = session_id
+        self.db_manager._session = None
 
-            # Clear client pool when changing sessions
-            self._client_pool = {}
-
-            # Try to get the session
-            session = self.db_manager.get_session(create_if_missing=False)
-            if not session:
-                # Restore old session ID
-                self.db_manager.session_id = old_session_id
-                self.db_manager._session = None
-                raise ValueError(f"Session not found: {session_id}")
-
-            # Try to restore state from this session
-            self._restore_latest_state_from_db()
-            return True
-
-        except Exception as e:
-            # Restore old session ID on any error
+        # Try to get the session
+        session = self.db_manager.get_session(create_if_missing=False)
+        if not session:
+            # Restore old session ID
             self.db_manager.session_id = old_session_id
             self.db_manager._session = None
-            self._log(f"Error setting session: {e}", level="error")
-            raise RuntimeError(f"Error setting session: {e}")
+            raise ValueError(f"Session not found: {session_id}")
 
-    def get_session_history(self, session_id: str, limit: int = None) -> list:
+        # Try to restore state from this session
+        state_data = self.db_manager.get_latest_state()
+        if not state_data:
+            self._log(f"Session found but has no state: {session_id}", level="warning")
+            return True  # Session exists but no state to restore
+
+        try:
+            # Restore form from state data
+            form_data = state_data.get('form', {})
+            form = self.form_class(**form_data)
+
+            # Create state with restored form
+            self.current_state = FormState[self.form_class](
+                form=form,
+                progress=state_data.get('progress', 0),
+                prev_question=state_data.get('prev_question', ''),
+                prev_answer=state_data.get('prev_answer', ''),
+                feedback=state_data.get('feedback', ''),
+                confidence=state_data.get('confidence', 0.0),
+                next_question=state_data.get('next_question', ''),
+                next_question_explanation=state_data.get(
+                    'next_question_explanation', ''
+                )
+            )
+            self._log(f"Restored session state with progress: {self.current_state.progress}%")
+            return True
+        except Exception as e:
+            self._log(f"Error restoring session: {e}", level="error")
+            raise RuntimeError(f"Error restoring session state: {e}")
+
+    def get_session_history(self, session_id: str) -> list:
         """Get all historical states for a session
 
         Args:
             session_id: Optional session ID.
-            limit: Maximum number of states to return (newest first)
 
         Returns:
             List of state dictionaries in chronological order
         """
-        with self.temporary_session(session_id):
-            return self.db_manager.get_state_history(session_id, limit=limit)
+
+        self._set_session(session_id)
+        return self.db_manager.get_state_history(session_id)
 
     def refresh_current_state(self) -> bool:
         """Refresh the current state from the database to ensure it's the latest version
@@ -277,10 +283,7 @@ class BaseProgressForm(ABC):
             self._log("No session ID to refresh state from", level="warning")
             return False
 
-        previous_state = self.current_state.model_dump() if hasattr(self, 'current_state') else {}
-
-        # Always use cache to reduce database reads
-        latest_state = self.db_manager.get_latest_state(use_cache=True)
+        latest_state = self.db_manager.get_latest_state()
         if not latest_state:
             self._log("No state found in database to refresh from", level="warning")
             return False
@@ -302,14 +305,7 @@ class BaseProgressForm(ABC):
                     'next_question_explanation', ''
                 )
             )
-
-            # Check if state has actually changed
-            current_state = self.current_state.model_dump()
-            if previous_state != current_state:
-                self._log("Refreshed current state from database (state changed)")
-            else:
-                self._log("State refreshed but unchanged", level="debug")
-
+            self._log("Refreshed current state from database")
             return True
         except Exception as e:
             self._log(f"Error refreshing state: {e}", level="error")
@@ -331,40 +327,26 @@ class BaseProgressForm(ABC):
         if session_id and session_id != self.db_manager.session_id:
             self._set_session(session_id)
         else:
-            # Use a faster cached state check
+            # Always refresh from database to ensure we have the latest state
             self.refresh_current_state()
 
         # Return the next question from the current state
         return self.current_state.next_question
 
-    def save_current_state(self, session_id: str = None, force: bool = False):
-        """Save current state to the database if it has changed
-
-        Args:
-            session_id: Optional session ID to save to
-            force: Force save even if state hasn't changed
-        """
+    def save_current_state(self, session_id: str = None):
+        """Save current state to the database"""
         if not hasattr(self, 'current_state') or not self.current_state:
             self._log("No current_state to save", level="warning")
             return
 
-        # Only save if state is dirty or forced
-        if not self._state_dirty and not force:
-            self._log("State unchanged, skipping save", level="debug")
-            return
-
         # If session_id is provided, temporarily switch to that session
+        original_session_id = None
         if session_id and session_id != self.db_manager.session_id:
-            with self.temporary_session(session_id):
-                self._do_save_state()
-        else:
-            self._do_save_state()
+            original_session_id = self.db_manager.session_id
+            self.db_manager.session_id = session_id
+            self.db_manager._session = None
+            self._log(f"Switched to session {session_id} for saving")
 
-        # Mark as clean after saving
-        self._state_dirty = False
-
-    def _do_save_state(self):
-        """Internal method to save state to current session"""
         # Convert state to dict and save
         state_dict = self.current_state.model_dump()
         save_result = self.db_manager.save_state(
@@ -374,11 +356,16 @@ class BaseProgressForm(ABC):
             client_id=self.client_id,
             form_class=self.form_class.__name__
         )
-
         if save_result:
-            self._log("Successfully saved state", level="debug")
+            self._log(f"Successfully saved state to session {self.db_manager.session_id}", level="info")
         else:
-            self._log("Failed to save state", level="error")
+            self._log(f"Failed to save state to session {self.db_manager.session_id}", level="error")
+
+        # Restore original session if we switched
+        if original_session_id:
+            self.db_manager.session_id = original_session_id
+            self.db_manager._session = None
+            self._log(f"Restored original session {original_session_id}")
 
     def _validate_tools(self) -> None:
         """Validate tools configuration"""
@@ -428,11 +415,7 @@ class BaseProgressForm(ABC):
 
     def _get_base_client(self, temperature: float = 0.1):
         """Get base AI client with default settings"""
-        client_key = f'base_{temperature}'
-        if client_key in self._client_pool:
-            return self._client_pool[client_key]
-
-        client = PydanticAIClient(
+        return PydanticAIClient(
             model_name="openai/gpt-4o-mini-2024-07-18",
             client_id=f'{self.client_id}.orchestrator',
             user_id=self.user_id,
@@ -443,23 +426,15 @@ class BaseProgressForm(ABC):
             model_settings=ModelSettings(temperature=temperature)
         )
 
-        self._client_pool[client_key] = client
-        return client
-
     def _get_tool_client(
         self,
         model_name: str = "openai/gpt-4o-mini-2024-07-18",
         temperature: float = 0.1
     ):
-        """Get client for specific tool execution with client pooling"""
+        """Get client for specific tool execution"""
         caller_name = inspect.stack()[1].function
-        client_key = f'{model_name}_{caller_name}_{temperature}'
-
-        if client_key in self._client_pool:
-            return self._client_pool[client_key]
-
-        client = PydanticAIClient(
-            model_name=model_name,
+        return PydanticAIClient(
+            model_name="openai/gpt-4o-mini-2024-07-18",
             client_id=f'{self.client_id}.{caller_name}',
             user_id=self.user_id,
             verbose=self.verbose_clients,
@@ -467,22 +442,14 @@ class BaseProgressForm(ABC):
             model_settings=ModelSettings(temperature=temperature)
         )
 
-        self._client_pool[client_key] = client
-        return client
-
     def _get_test_agent_client(
             self,
             model_name: str = "openai/gpt-4o-mini-2024-07-18",
             temperature: float = 0.7,
             max_tokens: int = 1000,
     ):
-        """Get test agent client with client pooling"""
-        client_key = f'test_agent_{model_name}_{temperature}'
-
-        if client_key in self._client_pool:
-            return self._client_pool[client_key]
-
-        client = PydanticAIClient(
+        """Get test agent client"""
+        return PydanticAIClient(
             model_name=model_name,
             client_id=f'{self.client_id}.test_agent',
             user_id=self.user_id,
@@ -494,30 +461,18 @@ class BaseProgressForm(ABC):
             )
         )
 
-        self._client_pool[client_key] = client
-        return client
-
     def set_verbose(self):
         """Set verbose mode and update logger level"""
         if self.verbose:
             logger.setLevel(logging.INFO)
         else:
             logger.setLevel(logging.WARNING)
-
-        # Update verbose setting in database manager
-        if hasattr(self, 'db_manager'):
-            self.db_manager.set_verbose(self.verbose)
-
-        # Update client's verbose setting
         if self.client_agent:
             self.client_agent.verbose = self.verbose
 
     def _log(self, message: str, *args, level: str = "info", **kwargs) -> None:
         """Internal logging method with verbose check"""
-        if level == "debug" and not self.verbose:
-            return
-
-        if not self.verbose and level != "error" and level != "warning":
+        if not self.verbose and level != "error":
             return
 
         log_func = getattr(logger, level)
@@ -530,7 +485,8 @@ class BaseProgressForm(ABC):
                 "Test agent not configured. Call configure_test_agent first."
             )
 
-        self._log("Getting test agent response for question")
+        self._log("Getting test agent response for question: %s",
+                  self.current_state.next_question)
 
         # Add base prompt
         self.test_agent_client.message_handler.add_message_system(
@@ -561,42 +517,15 @@ class BaseProgressForm(ABC):
 
         return result.response
 
-    def process_form_batch(self, messages: List[str]) -> List[FormState]:
-        """Process multiple messages in a batch to reduce database writes
+    def process_form(self, message: str) -> FormState:
+        """Process and update form info - base implementation"""
+        # Always refresh the current state before processing
+        self.refresh_current_state()
 
-        Args:
-            messages: List of messages to process
-
-        Returns:
-            List of form states after processing each message
-        """
-        results = []
-
-        # Process each message but only save at the end
-        for message in messages:
-            result = self._process_form_internal(message, save=False)
-            results.append(result)
-
-        # Save the final state
-        self.save_current_state()
-
-        return results
-
-    def _process_form_internal(self, message: str, save: bool = True) -> FormState:
-        """Internal implementation of form processing
-
-        Args:
-            message: The message to process
-            save: Whether to save state after processing
-
-        Returns:
-            Updated form state
-        """
-        self._log("Processing message: %s", message)
+        self._log("Processing info with message: %s", message)
 
         client = self._get_tool_client()
 
-        # Prepare prompt
         client.message_handler.add_message_system(
             """You are a helpful assistant that processes information.
 
@@ -605,9 +534,9 @@ class BaseProgressForm(ABC):
             2. Update the form fields based on the message content
             3. Preserve existing information, only append new details
             4. Focus on the form fields to update but check others if relevant
-            5. Generate a relevant follow-up question based on the user's response
+            5. Generate a relevant follow-up question based specifically on the user's response
             6. Set this as the next_question field
-            7. The next_question should follow up on what the user shared
+            7. The next_question should follow up on what the user just shared, not be generic
             8. Return the updated form state
             9. Pay attention to the [CUSTOM_RULES]
             """
@@ -659,30 +588,11 @@ class BaseProgressForm(ABC):
 
         # Update current state
         self.current_state = result
-        self._state_dirty = True
 
-        # Save state to database if requested
-        if save:
-            self.save_current_state()
+        # Save state to database
+        self.save_current_state()
 
         return self.current_state
-
-    def process_form(self, message: str) -> FormState:
-        """Process and update form info
-
-        Always ensures the latest state is loaded before processing.
-
-        Args:
-            message: User message to process
-
-        Returns:
-            Updated form state
-        """
-        # Always refresh the state first
-        self.refresh_current_state()
-
-        # Process using the internal method
-        return self._process_form_internal(message)
 
     def determine_action(self, message: str, session_id: str = None):
         """Orchestrate which action should be taken based on user message
@@ -758,9 +668,6 @@ class BaseProgressForm(ABC):
         if action.tool_name in tool_map:
             selected_tool = tool_map[action.tool_name]
             state = selected_tool(message)
-
-            # Mark state as dirty after tool execution
-            self._state_dirty = True
 
             # Save updated state after tool execution
             self.save_current_state()
