@@ -1,6 +1,6 @@
-from typing import List, Callable, Optional, TypeVar, Generic, Dict, Any, Tuple
+from typing import List, Callable, Optional, TypeVar, Generic
 from pydantic import BaseModel, Field, ConfigDict
-from src.pydantic2 import PydanticAIClient, ModelSettings
+from pydantic2 import PydanticAIClient, ModelSettings
 import logging
 import inspect
 from abc import ABC
@@ -71,7 +71,7 @@ class BaseProgressForm(ABC):
         self._client_pool = {}
 
         # Initialize DB manager with optional session_id
-        self.db_manager = SessionDBManager(default_session_id, verbose=verbose)
+        self.db_manager = SessionDBManager(default_session_id)
 
         # Try to restore session or create a new one
         self._restore_or_initialize_session(form_class)
@@ -95,8 +95,8 @@ class BaseProgressForm(ABC):
     def _restore_or_initialize_session(self, form_class: type[BaseModel]):
         """Restore session state from DB or initialize a new one"""
         # Get or create session
-        self.db_manager.get_session(
-            create_if_missing=True,
+        self.db_manager.get_or_create_session(
+            self.db_manager.session_id,
             user_id=self.user_id,
             client_id=self.client_id,
             form_class=form_class.__name__
@@ -196,7 +196,7 @@ class BaseProgressForm(ABC):
             return self.db_manager.session_id
 
         # Create a session using class properties
-        session = self.db_manager.ensure_session(
+        session = self.db_manager.get_or_create_session(
             user_id=self.user_id,
             client_id=self.client_id,
             form_class=self.form_class.__name__
@@ -236,7 +236,7 @@ class BaseProgressForm(ABC):
             self._client_pool = {}
 
             # Try to get the session
-            session = self.db_manager.get_session(create_if_missing=False)
+            session = self.db_manager.get_or_create_session(session_id)
             if not session:
                 # Restore old session ID
                 self.db_manager.session_id = old_session_id
@@ -265,7 +265,7 @@ class BaseProgressForm(ABC):
             List of state dictionaries in chronological order
         """
         with self.temporary_session(session_id):
-            return self.db_manager.get_state_history(session_id, limit=limit)
+            return self.db_manager.get_state_history(limit=limit)
 
     def refresh_current_state(self) -> bool:
         """Refresh the current state from the database to ensure it's the latest version
@@ -503,12 +503,6 @@ class BaseProgressForm(ABC):
             logger.setLevel(logging.INFO)
         else:
             logger.setLevel(logging.WARNING)
-
-        # Update verbose setting in database manager
-        if hasattr(self, 'db_manager'):
-            self.db_manager.set_verbose(self.verbose)
-
-        # Update client's verbose setting
         if self.client_agent:
             self.client_agent.verbose = self.verbose
 

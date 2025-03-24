@@ -84,6 +84,7 @@ click = "^8.1.7"
 aiohttp = "^3.11.14"
 questionary = "^2.0.1"
 psutil = "^5.9.8"
+semver = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 twine = "^4.0.2"
@@ -93,7 +94,6 @@ pytest-cov = "^4.1.0"
 flake8 = "^7.0.0"
 black = "^24.1.1"
 isort = "^5.13.2"
-semver = "^3.0.2"
 pip-audit = "^2.7.0"
 safety = "^2.3.5"
 mkdocs = "^1.5.3"
@@ -115,8 +115,6 @@ dev = [
     "flake8",
     "black",
     "isort",
-    "questionary",
-    "semver",
     "pip-audit",
     "safety",
     "mkdocs",

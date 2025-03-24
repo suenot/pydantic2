@@ -17,7 +17,7 @@
         "make:install": "rm -rf poetry.lock && poetry install",
         "make:build": "yarn make:clean && poetry build && poetry run pip install dist/*.whl && poetry run pip show -f pydantic2",
         "menu": "poetry run python ./devops/menu.py",
-        "debug": "poetry run python ./devops/debug.py"
+        "debug": "clear && poetry install && poetry run python ./devops/debug.py"
     },
     "devDependencies": {
         "openrouter-commit": "latest"
