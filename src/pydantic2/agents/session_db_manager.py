@@ -82,7 +82,6 @@ class SessionDBManager:
             self.db.connect()
 
         self.verbose = verbose
-        self.session_id = session_id
         self._session = None
         self._cache = {}  # {session_id: (timestamp, state_data)}
         self._cache_timeout = 30
@@ -93,42 +92,60 @@ class SessionDBManager:
         # Create tables if they don't exist
         self.db.create_tables([Session, SessionState], safe=True)
 
-        self._log(f"SessionDBManager initialized with session_id: {session_id}")
+        # Initialize session if provided
+        if session_id:
+            self.set_session(session_id)
 
-    def _log(self, message: str, level: str = "info"):
-        """Log a message with the appropriate level"""
-        if not self.verbose and level not in ["error", "warning"]:
-            return
-        getattr(logger, level)(message)
+    @property
+    def session_id(self) -> str:
+        """Get current session ID"""
+        return self._session.id if self._session else None
 
-    @contextmanager
-    def session_context(self, session_id: str = None):
-        """Context manager for session operations"""
-        old_session = self._session
-        try:
-            if session_id:
-                self._session = self.get_or_create_session(session_id)
-            yield self
-        finally:
-            self._session = old_session
-
-    @contextmanager
-    def temporary_session(self, session_id: str):
-        """Context manager for temporarily switching to another session
+    def set_session(self, session_id: str) -> bool:
+        """Set the active session
 
         Args:
-            session_id: The session ID to temporarily switch to
-        """
-        old_session_id = self.session_id
-        old_session = self._session
+            session_id: Session ID to set
 
+        Returns:
+            bool: True if session was set successfully
+        """
         try:
-            self.session_id = session_id
-            self._session = None
-            yield self
-        finally:
-            self.session_id = old_session_id
-            self._session = old_session
+            self._session = Session.get(Session.id == session_id)
+            self._log(f"Set active session: {session_id}")
+            return True
+        except DoesNotExist:
+            self._log(f"Session not found: {session_id}", "warning")
+            return False
+
+    def create_session(
+        self,
+        user_id: str = None,
+        client_id: str = None,
+        form_class: str = None
+    ) -> Session:
+        """Create a new session
+
+        Args:
+            user_id: Optional user ID
+            client_id: Optional client ID
+            form_class: Optional form class name
+
+        Returns:
+            Created session
+        """
+        session = Session.create(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            client_id=client_id,
+            form_class=form_class,
+            active=True,
+            created_at=datetime.now(),
+            last_active=datetime.now()
+        )
+        self._session = session
+        self._log(f"Created new session: {session.id}")
+        return session
 
     def get_or_create_session(
         self,
@@ -138,89 +155,71 @@ class SessionDBManager:
         form_class: str = None
     ) -> Session:
         """Get existing session or create new one"""
+        # If session_id is provided, try to get that specific session
         if session_id:
             try:
-                session = Session.get(Session.id == session_id)
-                self._log(f"Retrieved existing session: {session_id}")
-                return session
+                self._session = Session.get(Session.id == session_id)
+                self._log(f"Using existing session: {session_id}")
+                return self._session
             except DoesNotExist:
-                self._log(f"Session not found: {session_id}", "warning")
+                self._log(f"Session {session_id} not found")
+                return None
 
-        # Create new session
-        new_id = str(uuid.uuid4())
-        session = Session.create(
-            id=new_id,
-            user_id=user_id,
-            client_id=client_id,
-            form_class=form_class,
-            active=True,
-            created_at=datetime.now(),
-            last_active=datetime.now()
-        )
-        self._log(f"Created new session: {new_id}")
-        return session
-
-    def update_session_activity(self) -> bool:
-        """Update the last_active timestamp for the current session"""
+        # Only create a new session if no session_id was provided
         if not self._session:
+            session = self.create_session(user_id, client_id, form_class)
+            self._log(f"Created new session: {session.id}")
+            return session
+
+        self._log(f"Using current session: {self._session.id}")
+        return self._session
+
+    def save_state(self, state_data: dict) -> bool:
+        """Save current state to database
+
+        Args:
+            state_data: State data to save
+
+        Returns:
+            bool: True if state was saved successfully
+        """
+        if not self._session:
+            self._log("No active session to save state to", "warning")
             return False
 
         try:
-            self._session.last_active = datetime.now()
-            self._session.save()
-            return True
-        except Exception as e:
-            self._log(f"Error updating session activity: {e}", "error")
-            return False
+            # Convert state data to JSON if it's a dict
+            if isinstance(state_data, dict):
+                state_data = json.dumps(state_data)
 
-    def save_state(
-        self,
-        state_data: Union[Dict[str, Any], str],
-        progress: int = None,
-        user_id: str = None,
-        client_id: str = None,
-        form_class: str = None
-    ) -> bool:
-        """Save a state to the database"""
-        session = self.get_or_create_session(
-            self.session_id,
-            user_id=user_id,
-            client_id=client_id,
-            form_class=form_class
-        )
-        if not session:
-            return False
-
-        # Convert dict to JSON if necessary
-        state_json = json.dumps(state_data) if isinstance(state_data, dict) else state_data
-
-        # Update session activity
-        self.update_session_activity()
-
-        try:
-            timestamp = datetime.now()
-            SessionState.create(
-                session=session,
-                state_data=state_json,
-                progress=progress,
-                timestamp=timestamp
+            # Create new state record
+            state = SessionState.create(
+                session=self._session,
+                state_data=state_data,
+                timestamp=datetime.now()
             )
 
+            # Update session activity
+            self._session.last_active = datetime.now()
+            self._session.save()
+
             # Update cache
-            self._cache[session.id] = (timestamp, json.loads(state_json))
-            self._log(f"Saved state to session {session.id}")
+            self._cache[self._session.id] = (state.timestamp, json.loads(state_data))
+
+            self._log(f"Saved state {state.id} for session {self._session.id}")
+            self._log(f"State data: {state_data}")
             return True
         except Exception as e:
             self._log(f"Error saving state: {e}", "error")
             return False
 
-    def get_latest_state(self, use_cache: bool = True) -> Optional[Dict[str, Any]]:
+    def get_latest_state(self) -> Optional[Dict[str, Any]]:
         """Get the latest state for the current session"""
         if not self._session:
             return None
 
-        # Check cache first if enabled
-        if use_cache and self._session.id in self._cache:
+        # Check cache first
+        if self._session.id in self._cache:
             timestamp, state_data = self._cache[self._session.id]
             if (datetime.now() - timestamp).total_seconds() < self._cache_timeout:
                 return state_data
@@ -242,46 +241,50 @@ class SessionDBManager:
 
         return None
 
-    def get_state_history(self, limit: int = None) -> List[Dict[str, Any]]:
-        """Get all historical states for a session"""
+    def get_state_history(self, session_id: str = None, limit: int = None) -> List[Dict[str, Any]]:
+        """Get history of states for current session
+
+        Args:
+            session_id: Optional session ID to get history for
+            limit: Optional limit on number of states to return
+
+        Returns:
+            List of state dictionaries
+        """
+        if session_id:
+            self.set_session(session_id)
+
         if not self._session:
+            self._log("No active session to get state history from", "warning")
             return []
 
         try:
-            query = (
-                SessionState.select()
-                .where(SessionState.session == self._session)
-                .order_by(SessionState.timestamp.asc())
-            )
+            query = SessionState.select().where(
+                SessionState.session == self._session
+            ).order_by(SessionState.timestamp)
 
-            if limit is not None:
+            if limit:
                 query = query.limit(limit)
 
-            result = []
+            states = []
             for state in query:
-                try:
-                    state_data = json.loads(state.state_data)
-                    state_data['timestamp'] = state.timestamp.isoformat()
-                    state_data['progress'] = state.progress
-                    result.append(state_data)
-                except json.JSONDecodeError:
-                    self._log("Invalid JSON in state data", "warning")
-                    continue
+                state_data = json.loads(state.state_data)
+                states.append({
+                    'session_id': self._session.id,
+                    'timestamp': state.timestamp,
+                    'state': state_data
+                })
 
-            return result
+            self._log(f"Retrieved {len(states)} states for session {self._session.id}")
+            return states
         except Exception as e:
             self._log(f"Error getting state history: {e}", "error")
             return []
 
-    def clear_cache(self, session_id: str = None):
-        """Clear state cache for a session or all sessions"""
-        if session_id:
-            if session_id in self._cache:
-                del self._cache[session_id]
-                self._log(f"Cleared cache for session {session_id}")
-        else:
-            self._cache.clear()
-            self._log("Cleared all cached states")
+    def clear_cache(self):
+        """Clear state cache"""
+        self._cache.clear()
+        self._log("Cleared state cache")
 
     def close_session(self):
         """Close the current session"""
@@ -289,17 +292,23 @@ class SessionDBManager:
             self._session.active = False
             self._session.save()
             self._log(f"Closed session {self._session.id}")
+            self._session = None
 
     def delete_session(self):
         """Delete the current session and all associated states"""
         if self._session:
-            # Delete states first (foreign key constraint)
+            # Delete states first
             SessionState.delete().where(SessionState.session == self._session).execute()
             # Then delete session
             self._session.delete_instance()
             self._session = None
-            self.session_id = None
-            self._log(f"Deleted session and associated states")
+            self._log("Deleted session and associated states")
+
+    def _log(self, message: str, level: str = "info"):
+        """Log a message with the appropriate level"""
+        if not self.verbose and level not in ["error", "warning"]:
+            return
+        getattr(logger, level)(message)
 
     def check_database(self) -> bool:
         """Check if the database is accessible and properly configured"""

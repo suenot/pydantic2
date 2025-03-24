@@ -45,9 +45,35 @@ DB_CONFIGS: Dict[str, Dict] = {
     'Models Database': {'path': MODELS_DB, 'port': 8881},
     'Usage Database': {'path': USAGE_DB, 'port': 8882},
     'Sessions Database': {'path': SESSIONS_DB, 'port': 8883},
+    'Delete Database': {'action': 'delete_db'},
     'Kill Process on Port': {'action': 'kill_port'},
     'Exit': {'action': 'exit'}
 }
+
+
+def delete_database(db_path: Path) -> bool:
+    """
+    Safely delete a database file.
+
+    Args:
+        db_path: Path to the database file
+
+    Returns:
+        bool: True if database was deleted, False otherwise
+    """
+    try:
+        if not db_path.exists():
+            logger.warning(f"Database {db_path} does not exist")
+            return False
+
+        # Delete the database file
+        os.remove(db_path)
+        logger.info(f"Successfully deleted database: {db_path}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Error deleting database {db_path}: {e}")
+        return False
 
 
 def kill_port(port: int) -> bool:
@@ -63,7 +89,7 @@ def kill_port(port: int) -> bool:
     try:
         for proc in psutil.process_iter(['pid', 'name', 'connections']):
             try:
-                for conn in proc.connections():
+                for conn in proc.net_connections():
                     if conn.laddr.port == port:
                         logger.info(f"Killing process {proc.pid} on port {port}")
                         proc.kill()
@@ -201,6 +227,31 @@ def show_interactive_menu():
                             print(f"✗ No process found on port {port}")
                     except ValueError:
                         print("✗ Invalid port number")
+            elif config['action'] == 'delete_db':
+                db_choice = questionary.select(
+                    "Select database to delete:",
+                    choices=[
+                        'Models Database',
+                        'Usage Database',
+                        'Sessions Database',
+                        'Cancel'
+                    ]
+                ).ask()
+
+                if db_choice == 'Cancel':
+                    continue
+
+                db_path = DB_CONFIGS[db_choice]['path']
+                confirm = questionary.confirm(
+                    f"Are you sure you want to delete {db_choice}? This action cannot be undone.",
+                    default=False
+                ).ask()
+
+                if confirm:
+                    if delete_database(db_path):
+                        print(f"✓ Successfully deleted {db_choice}")
+                    else:
+                        print(f"✗ Failed to delete {db_choice}")
             elif config['action'] == 'exit':
                 break
         else:

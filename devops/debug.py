@@ -147,6 +147,10 @@ class DebugTools:
                 choices=choices
             ).ask()
 
+            if answer is None:
+                self.logger.info("No answer provided. Exiting...")
+                break
+
             if answer == "exit":
                 break
             elif answer == "back":

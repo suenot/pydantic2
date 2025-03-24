@@ -14,10 +14,11 @@
         "make:clean": "rm -rf dist/* build/* *.egg-info",
         "make:lint": "poetry run flake8 --ignore E203",
         "make:sort": "poetry run isort .",
-        "make:install": "rm -rf poetry.lock && poetry install",
+        "preinstall": "rm -rf poetry.lock && poetry install",
         "make:build": "yarn make:clean && poetry build && poetry run pip install dist/*.whl && poetry run pip show -f pydantic2",
         "menu": "poetry run python ./devops/menu.py",
-        "debug": "clear && poetry install && poetry run python ./devops/debug.py"
+        "debug": "clear && poetry install && poetry run python ./devops/debug.py",
+        "poetry:info": " poetry env info"
     },
     "devDependencies": {
         "openrouter-commit": "latest"
