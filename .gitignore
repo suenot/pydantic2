@@ -165,3 +165,9 @@ package-lock.json
 # ========================
 security_reports/
 .safety-project.ini
+
+
+# ========================
+# Cursor
+# ========================
+.cursor/
