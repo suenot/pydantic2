@@ -1,0 +1,156 @@
+[tool.poetry]
+name = "pydantic2"
+version = "1.1.0"
+description = "A powerful AI framework with structured Pydantic responses, flexible LLM integration, and advanced agent capabilities"
+authors = ["Unrealos <info@unrealos.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://pydantic.unrealos.com/"
+repository = "https://github.com/markolofsen/pydantic2"
+documentation = "https://pydantic.unrealos.com/"
+keywords = ["ai", "pydantic", "llm", "agents"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+include = [
+    "src/pydantic2/client/*.py",
+    "src/pydantic2/utils/*.py",
+    "src/pydantic2/db/*.py",
+    "src/pydantic2/**/*.py",
+    "LICENSE",
+    "README.md",
+    "assets/**/*",
+    "www/**/*",
+    "tests/**/*.py",
+    "examples/**/*.py",
+    "docs/**/*",
+    "*.yaml",
+    "*.yml",
+    "*.json",
+    "*.md",
+    "*.txt",
+    "*.ini",
+    "*.cfg",
+]
+
+exclude = [
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/*.pyd",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.coverage",
+    "**/.mypy_cache",
+    "**/.git",
+    "**/.gitignore",
+    "**/.env",
+    "**/venv",
+    "**/.venv",
+    "**/env",
+    "**/.env.*",
+    "**/dist",
+    "**/build",
+    "**/*.egg-info",
+    "**/*.log",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+pydantic-ai = "0.0.43"
+colorlog = "^6.7.0"
+typing-extensions = "^4.10.0"
+peewee = "^3.17.0"
+beautifulsoup4 = "^4.12.0"
+pyyaml = "^6.0.2"
+python-dotenv = "^1.0.0"
+datasette = "^0.65.1"
+click = "^8.1.7"
+aiohttp = "^3.11.14"
+questionary = "^2.0.1"
+psutil = "^5.9.8"
+
+[tool.poetry.group.dev.dependencies]
+twine = "^4.0.2"
+build = "^1.0.3"
+pytest = "^8.0.0"
+pytest-cov = "^4.1.0"
+flake8 = "^7.0.0"
+black = "^24.1.1"
+isort = "^5.13.2"
+semver = "^3.0.2"
+pip-audit = "^2.7.0"
+safety = "^2.3.5"
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.5.3"
+mkdocstrings = {extras = ["python"], version = "^0.24.0"}
+mkdocs-minify-plugin = "^0.7.1"
+mkdocs-git-revision-date-localized-plugin = "^1.2.0"
+mkdocs-material-extensions = "^1.3.1"
+ipython = "^8.21.0"
+watchdog = "^4.0.0"
+pytest-watch = "^4.0.0"
+
+[tool.poetry.extras]
+dev = [
+    "twine",
+    "build",
+    "pytest",
+    "pytest-cov",
+    "flake8",
+    "black",
+    "isort",
+    "questionary",
+    "semver",
+    "pip-audit",
+    "safety",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocs-minify-plugin",
+    "mkdocs-git-revision-date-localized-plugin",
+    "mkdocs-material-extensions",
+    "ipython",
+    "watchdog",
+    "pytest-watch"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "-v --disable-warnings"
+
+[tool.poetry.scripts]
+pydantic2 = "pydantic2.utils.cli:cli"

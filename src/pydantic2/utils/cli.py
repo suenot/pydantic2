@@ -1,5 +1,6 @@
 import subprocess
 import os
+from pathlib import Path
 import click
 import socket
 import signal
@@ -7,7 +8,10 @@ import sys
 import time
 import colorlog
 import logging
-from typing import Optional, List, Tuple
+import psutil
+import questionary
+import webbrowser
+from typing import Optional, List, Tuple, Dict
 
 # Configure colored logging
 handler = colorlog.StreamHandler()
@@ -28,13 +32,48 @@ logger = logging.getLogger('datasette_viewer')
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
-BASE_DIR = os.path.dirname(__file__)
-MODELS_DB = os.path.abspath(os.path.join(BASE_DIR, "../db/models.db"))
-USAGE_DB = os.path.abspath(os.path.join(BASE_DIR, "../db/usage.db"))
-SESSIONS_DB = os.path.abspath(os.path.join(BASE_DIR, "../db/sessions.db"))
+DB_DIR = Path(__file__).parent.parent / "db"
+MODELS_DB = DB_DIR / "models.db"
+USAGE_DB = DB_DIR / "usage.db"
+SESSIONS_DB = DB_DIR / "sessions.db"
 
 # Global list to track running processes
 running_processes: List[subprocess.Popen] = []
+
+# Database configurations
+DB_CONFIGS: Dict[str, Dict] = {
+    'Models Database': {'path': MODELS_DB, 'port': 8881},
+    'Usage Database': {'path': USAGE_DB, 'port': 8882},
+    'Sessions Database': {'path': SESSIONS_DB, 'port': 8883},
+    'Kill Process on Port': {'action': 'kill_port'},
+    'Exit': {'action': 'exit'}
+}
+
+
+def kill_port(port: int) -> bool:
+    """
+    Kill process running on specified port.
+
+    Args:
+        port: Port number to kill
+
+    Returns:
+        bool: True if process was killed, False otherwise
+    """
+    try:
+        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+            try:
+                for conn in proc.connections():
+                    if conn.laddr.port == port:
+                        logger.info(f"Killing process {proc.pid} on port {port}")
+                        proc.kill()
+                        return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+        return False
+    except Exception as e:
+        logger.error(f"Error killing port {port}: {e}")
+        return False
 
 
 def cleanup_processes():
@@ -74,6 +113,10 @@ def start_datasette(
 ) -> Tuple[Optional[subprocess.Popen], Optional[int]]:
     """Try to start datasette on an available port with retries."""
     for port in range(start_port, start_port + max_attempts):
+        # Try to kill any existing process on this port
+        kill_port(port)
+        time.sleep(1)  # Give the system time to free the port
+
         try:
             process = subprocess.Popen(
                 [
@@ -119,61 +162,63 @@ def launch_viewer(db_path: str, db_name: str, start_port: int) -> bool:
         return False
 
     running_processes.append(process)
+    url = f"http://localhost:{port}"
     print(f"✓ {db_name} DB viewer: {format_url(port)}")
+
+    # Open browser after a short delay to ensure server is ready
+    time.sleep(1)
+    try:
+        webbrowser.open(url)
+    except Exception as e:
+        print(f"Note: Could not open browser automatically: {e}")
+        print(f"Please open {url} manually in your browser")
+
     return True
 
 
+def show_interactive_menu():
+    """Show interactive menu for database selection."""
+    while True:
+        choice = questionary.select(
+            "Select an action:",
+            choices=list(DB_CONFIGS.keys())
+        ).ask()
+
+        if not choice:
+            break
+
+        config = DB_CONFIGS[choice]
+
+        if 'action' in config:
+            if config['action'] == 'kill_port':
+                port = questionary.text("Enter port number to kill:").ask()
+                if port:
+                    try:
+                        port = int(port)
+                        if kill_port(port):
+                            print(f"✓ Successfully killed process on port {port}")
+                        else:
+                            print(f"✗ No process found on port {port}")
+                    except ValueError:
+                        print("✗ Invalid port number")
+            elif config['action'] == 'exit':
+                break
+        else:
+            if launch_viewer(config['path'], choice, config['port']):
+                print("\n🔍 Press Ctrl+C to stop the server")
+                running_processes[0].wait()
+                break
+
+
 @click.command()
-@click.option('--view-models', is_flag=True, help='View models database')
-@click.option('--view-usage', is_flag=True, help='View usage database')
-@click.option('--view-sessions', is_flag=True, help='View sessions database')
-@click.option('--view-all', is_flag=True, help='View all databases')
-def cli(view_models, view_usage, view_sessions, view_all):
+@click.option('--db', is_flag=True, help='Launch interactive database viewer')
+def cli(db):
     """Pydantic2 CLI tool for database viewing"""
     try:
-        # Configuration for each database
-        db_configs = {
-            'models': {'path': MODELS_DB, 'port': 8001, 'view': view_models},
-            'usage': {'path': USAGE_DB, 'port': 8002, 'view': view_usage},
-            'sessions': {'path': SESSIONS_DB, 'port': 8003, 'view': view_sessions}
-        }
-
-        if view_all:
-            print("🚀 Starting all database viewers...")
-
-            # Launch all viewers
-            for db_name, config in db_configs.items():
-                if not launch_viewer(config['path'], db_name, config['port']):
-                    cleanup_processes()
-                    return
-
-            print("\n🔍 Press Ctrl+C to stop the servers")
-
-            # Monitor processes
-            while True:
-                try:
-                    for proc in running_processes:
-                        if proc.poll() is not None:
-                            _, stderr = proc.communicate()
-                            print(f"Server terminated: {stderr.decode()}")
-                            return
-                    time.sleep(1)
-                except KeyboardInterrupt:
-                    break
-
-        # Launch individual viewers if requested
-        elif any([view_models, view_usage, view_sessions]):
-            for db_name, config in db_configs.items():
-                if config['view']:
-                    if launch_viewer(config['path'], db_name, config['port']):
-                        print("\n🔍 Press Ctrl+C to stop the server")
-                        running_processes[0].wait()
-                    return
+        if db:
+            show_interactive_menu()
         else:
-            print(
-                "Specify an option: "
-                "--view-models, --view-usage, --view-sessions, or --view-all"
-            )
+            print("Use --db to launch the interactive database viewer")
 
     except Exception as e:
         print(f"Error: {str(e)}")

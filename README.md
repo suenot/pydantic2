@@ -29,13 +29,64 @@ A powerful Python framework for building AI applications with structured respons
 
 ## Installation 📦
 
+### Using Poetry (Recommended)
+
+If you're using Poetry for dependency management, you can install the package with:
+
+```bash
+poetry add pydantic2
+```
+
+### Using pip
+
+If you're using pip, you can install the package with:
+
 ```bash
 pip install pydantic2
 ```
 
-Set your API key:
+## Development Installation
+
+### Using Poetry (Recommended)
+
+1. Clone the repository:
 ```bash
-export OPENROUTER_API_KEY=your_api_key_here
+git clone https://github.com/markolofsen/pydantic2.git
+cd pydantic2
+```
+
+2. Install dependencies:
+```bash
+poetry install
+```
+
+3. Run tests:
+```bash
+poetry run pytest
+```
+
+### Using pip
+
+1. Clone the repository:
+```bash
+git clone https://github.com/markolofsen/pydantic2.git
+cd pydantic2
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install development dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
+4. Run tests:
+```bash
+pytest
 ```
 
 ## Quick Start ⚡
@@ -111,26 +162,28 @@ if __name__ == "__main__":
 
 ## CLI Tools 🔍
 
-Pydantic2 stores model information and usage statistics in SQLite databases. To help you interact with these databases, the library includes built-in CLI tools:
+Pydantic2 provides a convenient CLI tool for viewing and managing databases. The tool automatically opens your default browser when starting a database viewer.
 
 ```bash
-# View models database in browser (http://localhost:8001)
-pydantic2 --view-models
+# Launch interactive database viewer
+pydantic2 --db
 
-# View usage database in browser (http://localhost:8002)
-pydantic2 --view-usage
-
-# View both databases simultaneously
-pydantic2 --view-all
-
-# Show CLI help
+# Show help
 pydantic2 --help
 ```
+
+The interactive database viewer allows you to:
+- View Models Database
+- View Usage Database
+- View Sessions Database
+- Kill processes on specific ports
+- Exit the viewer
 
 The databases are automatically created and maintained as you use the library:
 
 1. **Models Database**: Stores information about models, parameters, and capabilities
 2. **Usage Database**: Tracks requests, tokens, costs, and usage statistics
+3. **Sessions Database**: Stores conversation history and context
 
 ---
 
@@ -258,7 +311,7 @@ response = client.generate(result_type=ProductAnalysis)
 
 ## License 📝
 
-MIT License - see the [LICENSE](LICENSE) file for details. For more information, see our [License page](https://raw.githubusercontent.com/markolofsen/pydantic2/refs/heads/main/LICENSE)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Credits ✨
 

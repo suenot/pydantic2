@@ -2,15 +2,15 @@
 import subprocess
 from pathlib import Path
 from typing import Optional
-import configparser
 import re
 import questionary
 import semver
+import toml
 
 
 class DeployManager:
     def __init__(self):
-        self.root_dir = Path(__file__).parent
+        self.root_dir = Path(__file__).parent.parent
         self.package_name = self._get_package_name()
         self.current_version = self._get_current_version()
         self.style = questionary.Style(
@@ -53,20 +53,18 @@ class DeployManager:
         }
 
     def _get_package_name(self) -> str:
-        """Get package name from setup.cfg."""
-        setup_cfg = self.root_dir / "setup.cfg"
+        """Get package name from pyproject.toml."""
+        pyproject_toml = self.root_dir / "pyproject.toml"
 
         try:
-            config = configparser.ConfigParser()
-            config.read(setup_cfg)
-
-            package_name = config.get("metadata", "name")
+            data = toml.load(pyproject_toml)
+            package_name = data["tool"]["poetry"]["name"]
             if not package_name:
-                raise ValueError("Package name not found in setup.cfg")
+                raise ValueError("Package name not found in pyproject.toml")
 
             return package_name
         except Exception as e:
-            raise ValueError(f"Error reading package name from setup.cfg: {e}")
+            raise ValueError(f"Error reading package name from pyproject.toml: {e}")
 
     def run_command(
         self, command: str, description: str = "", check: bool = True
@@ -90,13 +88,16 @@ class DeployManager:
 
     def print_tree(self) -> bool:
         """Print tree of files in current directory."""
-        return self.run_command("git ls-files --others --exclude-standard --cached | tree --fromfile", "Printing tree of files")
+        return self.run_command(
+            "git ls-files --others --exclude-standard --cached | tree --fromfile",
+            "Printing tree of files"
+        )
 
     def check_environment(self) -> bool:
         """Check development environment."""
         commands = [
-            ("python -V", "Python version"),
-            ("pip list", "Installed packages"),
+            ("poetry --version", "Poetry version"),
+            ("poetry show", "Installed packages"),
             (
                 "tree -I 'venv|__pycache__|*.pyc|*.pyo|*.pyd|.git|"
                 ".pytest_cache|*.egg-info|dist|build'",
@@ -106,52 +107,30 @@ class DeployManager:
         return all(self.run_command(cmd, desc) for cmd, desc in commands)
 
     def install_package(self) -> bool:
-        """Install package in development mode."""
-        commands = [
-            (
-                f"pip uninstall {self.package_name} -y",
-                "Uninstalling old version",
-                False,
-            ),
-            ("pip install -e .", "Installing package", True),
-        ]
-        return all(self.run_command(cmd, desc, chk) for cmd, desc, chk in commands)
+        """Install package using Poetry."""
+        return self.run_command("poetry install", "Installing package")
 
     def run_tests(self) -> bool:
         """Run test suite."""
-
-        # Ensure package is installed in development mode
-        if not self.run_command(
-            "pip show " + self.package_name,
-            "Checking package installation",
-            check=False,
-        ):
-            print("\n❌ Package not installed. Installing in development mode...")
-            if not self.install_package():
-                return False
-
-        # Get the source directory for coverage
-        src_dir = self.root_dir / "src" / self.package_name
-        if not src_dir.exists():
-            src_dir = self.root_dir / self.package_name
-
-        # Run tests with coverage
         return self.run_command(
-            f"pytest -v --cov={src_dir} --cov-report=term-missing tests/",
-            "Running tests with coverage",
+            "poetry run pytest -v --cov=src/pydantic2 --cov-report=term-missing tests/",
+            "Running tests with coverage"
         )
 
     def format_code(self) -> bool:
         """Format code using black and isort."""
         commands = [
-            ("black .", "Formatting with black"),
-            ("isort .", "Sorting imports"),
+            ("poetry run black .", "Formatting with black"),
+            ("poetry run isort .", "Sorting imports"),
         ]
         return all(self.run_command(cmd, desc) for cmd, desc in commands)
 
     def check_lint(self) -> bool:
         """Run linting checks."""
-        commands = [("flake8 .", "Running flake8"), ("mypy .", "Running type checks")]
+        commands = [
+            ("poetry run flake8 .", "Running flake8"),
+            ("poetry run mypy .", "Running type checks")
+        ]
         return all(self.run_command(cmd, desc) for cmd, desc in commands)
 
     def check_security(self) -> bool:
@@ -169,23 +148,26 @@ class DeployManager:
         # Run pip-audit for Python-specific vulnerabilities
         print("\n📦 Checking with pip-audit:")
         pip_audit_report = reports_dir / f"pip_audit_{timestamp}.json"
-        pip_audit_cmd = f"pip-audit --local --format json -o {pip_audit_report}"
+        pip_audit_cmd = f"poetry run pip-audit --local --format json -o {pip_audit_report}"
         has_pip_audit_issues = not self.run_command(pip_audit_cmd, "Running pip-audit check")
 
         # If pip-audit found issues, offer to fix them
         if has_pip_audit_issues:
-            if questionary.confirm("Would you like pip-audit to attempt fixing the vulnerabilities?").ask():
-                fix_cmd = "pip-audit --fix"
+            if questionary.confirm(
+                "Would you like pip-audit to attempt fixing the vulnerabilities?"
+            ).ask():
+                fix_cmd = "poetry run pip-audit --fix"
                 self.run_command(fix_cmd, "Attempting to fix vulnerabilities", check=False)
 
         # Run safety scan with basic output
         print("\n🔒 Checking with Safety CLI:")
         safety_report = reports_dir / f"safety_{timestamp}.txt"
-        safety_cmd = f"safety scan --short-report | tee {safety_report}"
+        safety_cmd = f"poetry run safety scan --short-report | tee {safety_report}"
         result = subprocess.run(safety_cmd, shell=True, text=True, capture_output=True)
 
         # Check if Safety CLI requires login
-        if "Please login or register Safety CLI" in result.stdout or "Please login or register Safety CLI" in result.stderr:
+        if "Please login or register Safety CLI" in result.stdout or \
+           "Please login or register Safety CLI" in result.stderr:
             print("\n⚠️  Safety CLI requires authentication")
             print("📝 To use Safety CLI, you need to:")
             print("1. Register for a free account at https://safetycli.com")
@@ -219,15 +201,18 @@ class DeployManager:
 
                 if fix_level:
                     # Use no-prompt for faster execution
-                    safety_fix_cmd = f"safety scan --apply-security-updates --auto-security-updates-limit {fix_level} --no-prompt"
+                    safety_fix_cmd = (
+                        f"poetry run safety scan --apply-security-updates "
+                        f"--auto-security-updates-limit {fix_level} --no-prompt"
+                    )
                     self.run_command(safety_fix_cmd, "Applying security fixes", check=False)
 
         print("\nSecurity check completed. Please review any findings above.")
         if has_pip_audit_issues or has_safety_issues:
             print("⚠️  Security issues were found in your dependencies.")
-            print("📝 Note: Some findings might be false positives or already addressed in poetry.lock")
+            print("📝 Note: Some findings might be false positives")
             print("💡 Tips:")
-            print("  - Use 'poetry update' to update dependencies to their latest allowed versions")
+            print("  - Use 'poetry update' to update dependencies")
             print("  - Review 'poetry.lock' for any known vulnerable dependencies")
             print(f"  - Security reports saved to {reports_dir}")
             print("  - For detailed reports, run 'safety scan --full-report'")
@@ -249,7 +234,7 @@ class DeployManager:
         """Clean all build artifacts."""
         return self.run_command(
             "rm -rf dist build *.egg-info __pycache__ .pytest_cache .mypy_cache",
-            "Cleaning build artifacts",
+            "Cleaning build artifacts"
         )
 
     def build_package(self) -> bool:
@@ -257,7 +242,7 @@ class DeployManager:
         if not self.clean_builds():
             return False
 
-        return self.run_command("python -m build", "Building package")
+        return self.run_command("poetry build", "Building package")
 
     def upload_to_testpypi(self) -> bool:
         """Upload package to TestPyPI."""
@@ -285,7 +270,7 @@ class DeployManager:
             return False
 
         return self.run_command(
-            "twine upload --repository testpypi dist/*", "Uploading to TestPyPI"
+            "poetry publish -r testpypi", "Uploading to TestPyPI"
         )
 
     def upload_to_pypi(self) -> bool:
@@ -310,7 +295,7 @@ class DeployManager:
             print("❌ Package build failed! Aborting upload to PyPI.")
             return False
 
-        return self.run_command("twine upload dist/*", "Uploading to PyPI")
+        return self.run_command("poetry publish", "Uploading to PyPI")
 
     def update_version(self) -> bool:
         """Update package version."""
@@ -334,7 +319,9 @@ class DeployManager:
             if ver.prerelease:
                 prefix = str(ver.prerelease).split('.')[0]
                 number = int(str(ver.prerelease).split('.')[1])
-                new_version = f"{ver.major}.{ver.minor}.{ver.patch}-{prefix}.{number + 1}"
+                new_version = (
+                    f"{ver.major}.{ver.minor}.{ver.patch}-{prefix}.{number + 1}"
+                )
             else:
                 # For stable versions, increment version number
                 if increment_type == "patch":
@@ -354,51 +341,45 @@ class DeployManager:
             return False
 
     def _get_current_version(self) -> Optional[str]:
-        """Get current package version from setup.cfg."""
-        setup_cfg = self.root_dir / "setup.cfg"
-        if not setup_cfg.exists():
-            print("❌ setup.cfg not found")
+        """Get current package version from pyproject.toml."""
+        pyproject_toml = self.root_dir / "pyproject.toml"
+        if not pyproject_toml.exists():
+            print("❌ pyproject.toml not found")
             return None
 
         try:
-            config = configparser.ConfigParser()
-            config.read(setup_cfg)
-
-            version = config.get("metadata", "version")
+            data = toml.load(pyproject_toml)
+            version = data["tool"]["poetry"]["version"]
             if not version:
-                print("❌ Version not found in setup.cfg")
+                print("❌ Version not found in pyproject.toml")
                 return None
 
             return version
         except Exception as e:
-            print(f"❌ Error reading setup.cfg: {e}")
+            print(f"❌ Error reading pyproject.toml: {e}")
             return None
 
     def _update_version_in_files(self, new_version: str) -> None:
         """Update version in configuration files."""
         module_name = self.package_name
-        setup_cfg = self.root_dir / "setup.cfg"
+        pyproject_toml = self.root_dir / "pyproject.toml"
 
-        # Update setup.cfg
-        if setup_cfg.exists():
+        # Update pyproject.toml
+        if pyproject_toml.exists():
             try:
-                config = configparser.ConfigParser()
-                config.read(setup_cfg)
+                data = toml.load(pyproject_toml)
+                data["tool"]["poetry"]["version"] = new_version
 
-                if "metadata" in config:
-                    config["metadata"]["version"] = new_version
-
-                    with open(setup_cfg, "w") as f:
-                        config.write(f)
+                with open(pyproject_toml, "w") as f:
+                    toml.dump(data, f)
             except Exception as e:
-                print(f"❌ Error updating setup.cfg: {e}")
+                print(f"❌ Error updating pyproject.toml: {e}")
 
         # Update version in __pack__.py if it exists
         init_path = self.root_dir / "src" / module_name / "__pack__.py"
 
         # update __pack__.py
         if init_path.exists():
-
             with open(init_path) as f:
                 content = f.read()
 
@@ -435,7 +416,6 @@ class DeployManager:
                 message=f"{self.package_name.upper()} v{self.current_version}",
                 choices=choices,
                 style=self.style,
-                # instruction="Use ↑↓ to navigate, Enter to select",
             ).ask()
 
             if not action or action == "Exit":
