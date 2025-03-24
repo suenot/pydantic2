@@ -41,7 +41,7 @@ class FormState(BaseModel, Generic[FormT]):
         default="",
         description="Explanation of next question based on state"
     )
-
+    user_language: str = Field(default="", description="User's language (iso639-1)")
 
 class BaseProgressForm(ABC):
     """Base class for processing form data with AI assistance"""
@@ -107,8 +107,16 @@ class BaseProgressForm(ABC):
         # Try to get the latest state
         self._restore_latest_state_from_db()
 
-        # Get state history for logging
+        # If this is a new session (no history), save initial state
         history = self.db_manager.get_state_history()
+        # if not history:
+        #     self._log("New session detected, saving initial state")
+        #     self.current_state.next_question = "Tell me about your startup idea."
+        #     self._state_dirty = True
+        #     self.save_current_state()
+        #     history = self.db_manager.get_state_history()
+
+        # Get state history for logging
         self._log(f"States in history: {len(history)}")
         for i, state in enumerate(history, 1):
             self._log(f"State {i}:")
@@ -138,7 +146,8 @@ class BaseProgressForm(ABC):
                     next_question=state_data.get('next_question', ''),
                     next_question_explanation=state_data.get(
                         'next_question_explanation', ''
-                    )
+                    ),
+                    user_language=state_data.get('user_language', '')
                 )
                 self._log("Restored session state")
                 self._state_dirty = False
@@ -151,30 +160,12 @@ class BaseProgressForm(ABC):
         self._log("Initialized new session state")
         self._state_dirty = True
 
-        # Get state history for logging
-        history = self.db_manager.get_state_history()
-        self._log(f"States in history: {len(history)}")
-        for i, state in enumerate(history, 1):
-            self._log(f"State {i}:")
-            self._log(f"  Progress: {state.get('state', {}).get('progress', 'None')}%")
-            self._log(f"  Question: {state.get('state', {}).get('prev_question', 'None')}")
-            self._log(f"  Answer: {state.get('state', {}).get('prev_answer', 'None')}")
-            self._log(f"  Timestamp: {state.get('timestamp', 'None')}")
-
     def process_form(
         self,
         message: str,
         session_id: str = None
     ) -> FormState:
-        """Process a single form message
-
-        Args:
-            message: User's message to process
-            session_id: Optional session ID to use. If None, uses current session.
-
-        Returns:
-            Updated form state after processing
-        """
+        """Process and update form info - base implementation"""
         # Ensure we have a session
         if session_id:
             session = self.db_manager.get_or_create_session(session_id=session_id)
@@ -187,20 +178,81 @@ class BaseProgressForm(ABC):
                 form_class=self.form_class.__name__
             )
 
-        # Process the message
-        result = self._process_form_internal(message)
+        self._log("Processing info with message: %s", message)
 
-        # Get state history for logging
-        history = self.db_manager.get_state_history()
-        self._log(f"States in history: {len(history)}")
-        for i, state in enumerate(history, 1):
-            self._log(f"State {i}:")
-            self._log(f"  Progress: {state.get('state', {}).get('progress', 'None')}%")
-            self._log(f"  Question: {state.get('state', {}).get('prev_question', 'None')}")
-            self._log(f"  Answer: {state.get('state', {}).get('prev_answer', 'None')}")
-            self._log(f"  Timestamp: {state.get('timestamp', 'None')}")
+        client = self._get_tool_client()
 
-        return result
+        client.message_handler.add_message_system(
+            """You are a helpful assistant that processes information.
+
+            IMPORTANT:
+            - Define user's language from the message and set it to the 'user_language' field
+            - Ask in [USER_LANGUAGE] language
+            - Pay attention to the [CUSTOM_RULES]
+
+            TASK:
+            1. Review the [USER_MESSAGE]
+            2. Update the form fields based on the message content
+            3. Preserve existing information, only append new details
+            4. Focus on the form fields to update but check others if relevant
+            5. Generate a relevant follow-up question based specifically on the user's response.
+            6. Set this as the next_question field
+            7. The next_question should follow up on what the user just shared, not be generic
+            8. Return the updated form state
+            """
+        )
+
+        # Add form class definition
+        form_fields = []
+        for field_name, field in self.form_class.__annotations__.items():
+            field_type = field.__name__ if hasattr(field, "__name__") else str(field)
+            field_obj = self.form_class.model_fields.get(field_name, {})
+
+            description = ""
+            if hasattr(field_obj, "description") and field_obj.description:
+                description = field_obj.description
+
+            form_fields.append(f"- {field_name}: {field_type} - {description}")
+
+        client.message_handler.add_message_block(
+            "FORM_STRUCTURE",
+            "Form fields:\n" + "\n".join(form_fields)
+        )
+
+        # Add current form state
+        client.message_handler.add_message_block(
+            "CURRENT_STATE",
+            self.current_state.model_dump(),
+        )
+
+        # Add custom rules for form processing
+        client.message_handler.add_message_block(
+            "CUSTOM_RULES",
+            """
+            - Keep all existing information unless directly contradicted
+            - If fields are empty and the message doesn't provide information, leave them empty
+            - Incrementally build the form based on user input
+            - The progress field should reflect overall form completion (0-100)
+            """
+        )
+
+        # Add user message
+        client.message_handler.add_message_user(message)
+
+        # Process and get updated state
+        result = client.generate(result_type=FormState[self.form_class])
+
+        # Store history of Q&A
+        result.prev_question = self.current_state.next_question
+        result.prev_answer = message
+
+        # Update current state
+        self.current_state = result
+
+        # Save state to database
+        self.save_current_state()
+
+        return self.current_state
 
     def save_current_state(self):
         """Save current state to the database if it has changed"""
@@ -233,33 +285,12 @@ class BaseProgressForm(ABC):
             self.db_manager.set_session(session_id)
         return self.db_manager.get_state_history(session_id)
 
-    def _process_form_internal(self, message: str) -> FormState:
-        """Internal method to process a form message
-
-        Args:
-            message: User's message to process
-
-        Returns:
-            Updated form state
-        """
+    def _process_message(self, message: str) -> str:
+        """Internal method to process a form message and get a response"""
         self._log(f"Processing message: {message}")
-
-        # Update form with new data
-        self.current_state.prev_question = self.current_state.next_question
-        self.current_state.prev_answer = message
 
         # Process using test agent
         result = self._process_with_test_agent(message)
-
-        # Get state history for logging
-        history = self.db_manager.get_state_history()
-        self._log(f"States in history: {len(history)}")
-        for i, state in enumerate(history, 1):
-            self._log(f"State {i}:")
-            self._log(f"  Progress: {state.get('state', {}).get('progress', 'None')}%")
-            self._log(f"  Question: {state.get('state', {}).get('prev_question', 'None')}")
-            self._log(f"  Answer: {state.get('state', {}).get('prev_answer', 'None')}")
-            self._log(f"  Timestamp: {state.get('timestamp', 'None')}")
 
         return result
 
@@ -377,6 +408,7 @@ class BaseProgressForm(ABC):
             )
         )
 
+
         self._client_pool[client_key] = client
         return client
 
@@ -438,7 +470,7 @@ class BaseProgressForm(ABC):
 
         return result.response
 
-    def _process_with_test_agent(self, message: str) -> FormState:
+    def _process_with_test_agent(self, message: str) -> str:
         """Internal method to process a form message using test agent"""
         self._log("Processing message with test agent")
 
@@ -446,51 +478,7 @@ class BaseProgressForm(ABC):
         response = self.get_test_agent_response()
         self._log(f"Test agent response: {response}")
 
-        # Update form data based on the message
-        form_data = self.current_state.form.model_dump()
-
-        # Map messages to form fields with more specific conditions
-        if "food delivery app" in message.lower() or "startup idea" in message.lower():
-            form_data["idea_desc"] = message
-            self._log(f"Updated idea_desc: {message}")
-        elif "target market" in message.lower() or "urban professionals" in message.lower():
-            form_data["target_mkt"] = message
-            self._log(f"Updated target_mkt: {message}")
-        elif "revenue" in message.lower() or "commission" in message.lower() or "fee" in message.lower():
-            form_data["biz_model"] = message
-            self._log(f"Updated biz_model: {message}")
-        elif "team" in message.lower() or "developer" in message.lower() or "experienced" in message.lower():
-            form_data["team_info"] = message
-            self._log(f"Updated team_info: {message}")
-
-        # Create a new state with updated form data
-        new_state = FormState[self.form_class](
-            form=self.form_class(**form_data),
-            progress=self.current_state.progress,
-            prev_question=self.current_state.next_question,
-            prev_answer=message,
-            feedback="",
-            confidence=0.0,
-            next_question=response,
-            next_question_explanation=""
-        )
-
-        # Update progress based on form completion
-        filled_fields = sum(1 for value in form_data.values() if value)
-        total_fields = len(form_data)
-        new_state.progress = min(100, int((filled_fields / total_fields) * 100))
-
-        self._log(f"Updated progress: {new_state.progress}%")
-        self._log(f"Form data: {form_data}")
-
-        # Update current state and mark as dirty
-        self.current_state = new_state
-        self._state_dirty = True
-
-        # Save state to database
-        self.save_current_state()
-
-        return new_state
+        return response
 
     def get_current_progress(self) -> int:
         """Get the current progress of the form

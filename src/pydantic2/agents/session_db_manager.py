@@ -58,12 +58,21 @@ class Session(BaseModel):
     last_active = DateTimeField(default=datetime.now)
 
 
-class SessionState(BaseModel):
+class FormState(BaseModel):
     """Model for tracking form states within a session"""
     id = AutoField()
-    session = ForeignKeyField(Session, backref='states')
+    session = ForeignKeyField(Session, backref='form_states')
     state_data = TextField()
     progress = TextField(null=True)
+    timestamp = DateTimeField(default=datetime.now)
+
+
+class ChatMessage(BaseModel):
+    """Model for tracking chat messages within a session"""
+    id = AutoField()
+    session = ForeignKeyField(Session, backref='chat_messages')
+    role = CharField()  # 'user' or 'assistant'
+    content = TextField()
     timestamp = DateTimeField(default=datetime.now)
 
 
@@ -90,7 +99,7 @@ class SessionDBManager:
         logger.setLevel(logging.INFO if verbose else logging.WARNING)
 
         # Create tables if they don't exist
-        self.db.create_tables([Session, SessionState], safe=True)
+        self.db.create_tables([Session, FormState, ChatMessage], safe=True)
 
         # Initialize session if provided
         if session_id:
@@ -193,7 +202,7 @@ class SessionDBManager:
                 state_data = json.dumps(state_data)
 
             # Create new state record
-            state = SessionState.create(
+            state = FormState.create(
                 session=self._session,
                 state_data=state_data,
                 timestamp=datetime.now()
@@ -226,9 +235,9 @@ class SessionDBManager:
 
         try:
             latest_state = (
-                SessionState.select()
-                .where(SessionState.session == self._session)
-                .order_by(SessionState.timestamp.desc())
+                FormState.select()
+                .where(FormState.session == self._session)
+                .order_by(FormState.timestamp.desc())
                 .first()
             )
 
@@ -249,34 +258,38 @@ class SessionDBManager:
             limit: Optional limit on number of states to return
 
         Returns:
-            List of state dictionaries
+            List of state dictionaries in chronological order
         """
         if session_id:
             self.set_session(session_id)
 
         if not self._session:
-            self._log("No active session to get state history from", "warning")
+            self._log("No active session to get history for", "warning")
             return []
 
         try:
-            query = SessionState.select().where(
-                SessionState.session == self._session
-            ).order_by(SessionState.timestamp)
+            # Get chat messages
+            messages = (
+                ChatMessage.select()
+                .where(ChatMessage.session == self._session)
+                .order_by(ChatMessage.timestamp.asc())
+            )
 
             if limit:
-                query = query.limit(limit)
+                messages = messages.limit(limit)
 
-            states = []
-            for state in query:
-                state_data = json.loads(state.state_data)
-                states.append({
-                    'session_id': self._session.id,
-                    'timestamp': state.timestamp,
-                    'state': state_data
+            # Format messages
+            history = []
+            for message in messages:
+                history.append({
+                    'role': message.role,
+                    'content': message.content,
+                    'timestamp': message.timestamp.isoformat(),
+                    'session_id': self._session.id
                 })
 
-            self._log(f"Retrieved {len(states)} states for session {self._session.id}")
-            return states
+            self._log(f"Retrieved {len(history)} messages for session {self._session.id}")
+            return history
         except Exception as e:
             self._log(f"Error getting state history: {e}", "error")
             return []
@@ -297,12 +310,14 @@ class SessionDBManager:
     def delete_session(self):
         """Delete the current session and all associated states"""
         if self._session:
-            # Delete states first
-            SessionState.delete().where(SessionState.session == self._session).execute()
+            # Delete chat messages first
+            ChatMessage.delete().where(ChatMessage.session == self._session).execute()
+            # Delete form states
+            FormState.delete().where(FormState.session == self._session).execute()
             # Then delete session
             self._session.delete_instance()
             self._session = None
-            self._log("Deleted session and associated states")
+            self._log("Deleted session and associated data")
 
     def _log(self, message: str, level: str = "info"):
         """Log a message with the appropriate level"""
@@ -321,7 +336,7 @@ class SessionDBManager:
                 writable = os.access(db_path, os.W_OK)
                 self._log(f"Database file is writable: {writable}")
 
-                if Session.table_exists() and SessionState.table_exists():
+                if Session.table_exists() and FormState.table_exists() and ChatMessage.table_exists():
                     self._log("Database tables exist")
                     return True
             else:
@@ -329,7 +344,7 @@ class SessionDBManager:
                 db_path.parent.mkdir(parents=True, exist_ok=True)
                 self.db.close()
                 self.db.connect()
-                self.db.create_tables([Session, SessionState], safe=True)
+                self.db.create_tables([Session, FormState, ChatMessage], safe=True)
                 self._log("Created database and tables")
                 return True
 
@@ -341,3 +356,229 @@ class SessionDBManager:
         """Set verbosity level"""
         self.verbose = verbose
         logger.setLevel(logging.INFO if verbose else logging.WARNING)
+
+    def save_chat_message(self, role: str, content: str) -> bool:
+        """Save a chat message to the session history
+
+        Args:
+            role: Message role ('user' or 'assistant')
+            content: Message content
+
+        Returns:
+            bool: True if message was saved successfully
+        """
+        if not self._session:
+            self._log("No active session to save message to", "warning")
+            return False
+
+        try:
+            # Create new chat message record
+            message = ChatMessage.create(
+                session=self._session,
+                role=role,
+                content=content,
+                timestamp=datetime.now()
+            )
+
+            # Update session activity
+            self._session.last_active = datetime.now()
+            self._session.save()
+
+            self._log(f"Saved chat message for session {self._session.id}")
+            return True
+        except Exception as e:
+            self._log(f"Error saving chat message: {e}", "error")
+            return False
+
+    def initialize_session(self, user_id: str, client_id: str, form_class: str) -> bool:
+        """Initialize a new session with initial state
+
+        Args:
+            user_id: User ID
+            client_id: Client ID
+            form_class: Form class name
+
+        Returns:
+            bool: True if initialization was successful
+        """
+        try:
+            # Create new session
+            session = self.create_session(
+                user_id=user_id,
+                client_id=client_id,
+                form_class=form_class
+            )
+
+            if not session:
+                self._log("Failed to create session", "error")
+                return False
+
+            # Save initial state
+            initial_state = {
+                'form': {},
+                'progress': 0,
+                'prev_question': '',
+                'prev_answer': '',
+                'feedback': '',
+                'confidence': 0.0,
+                'next_question': 'Tell me about your startup idea.',
+                'next_question_explanation': ''
+            }
+            self.save_state(initial_state)
+
+            # Save initial question as assistant message
+            self.save_chat_message('assistant', initial_state['next_question'])
+
+            self._log("Successfully initialized session")
+            return True
+        except Exception as e:
+            self._log(f"Error initializing session: {e}", "error")
+            return False
+
+    def restore_session_state(self, form_class: type) -> Optional[Dict[str, Any]]:
+        """Restore the latest state for the current session
+
+        Args:
+            form_class: Form class to restore state for
+
+        Returns:
+            Optional[Dict[str, Any]]: Restored state or None if failed
+        """
+        if not self._session:
+            self._log("No active session to restore state for", "warning")
+            return None
+
+        try:
+            state_data = self.get_latest_state()
+            if not state_data:
+                self._log("No state found to restore", "warning")
+                return None
+
+            # Create form instance from state data
+            form_data = state_data.get('form', {})
+            form = form_class(**form_data)
+
+            # Create state with restored form
+            state = {
+                'form': form,
+                'progress': state_data.get('progress', 0),
+                'prev_question': state_data.get('prev_question', ''),
+                'prev_answer': state_data.get('prev_answer', ''),
+                'feedback': state_data.get('feedback', ''),
+                'confidence': state_data.get('confidence', 0.0),
+                'next_question': state_data.get('next_question', ''),
+                'next_question_explanation': state_data.get('next_question_explanation', '')
+            }
+
+            self._log("Successfully restored session state")
+            return state
+        except Exception as e:
+            self._log(f"Error restoring session state: {e}", "error")
+            return None
+
+    def process_message(self, message: str, form_class: type) -> Optional[Dict[str, Any]]:
+        """Process a message and update session state
+
+        Args:
+            message: User's message to process
+            form_class: Form class to update state for
+
+        Returns:
+            Optional[Dict[str, Any]]: Updated state or None if failed
+        """
+        if not self._session:
+            self._log("No active session to process message for", "warning")
+            return None
+
+        try:
+            # Save user's message
+            self.save_chat_message('user', message)
+            self._log(f"Saved user message: {message}")
+
+            # Get current state
+            current_state = self.restore_session_state(form_class)
+            if not current_state:
+                self._log("Failed to get current state", "error")
+                return None
+
+            # Update state with new message
+            current_state['prev_question'] = current_state['next_question']
+            current_state['prev_answer'] = message
+
+            # Save updated state
+            self.save_state(current_state)
+
+            self._log("Successfully processed message")
+            return current_state
+        except Exception as e:
+            self._log(f"Error processing message: {e}", "error")
+            return None
+
+    def save_assistant_response(self, response: str, state: Dict[str, Any]) -> bool:
+        """Save assistant's response and update state
+
+        Args:
+            response: Assistant's response
+            state: Current state to update
+
+        Returns:
+            bool: True if save was successful
+        """
+        if not self._session:
+            self._log("No active session to save response for", "warning")
+            return False
+
+        try:
+            # Save assistant's response
+            self.save_chat_message('assistant', response)
+            self._log(f"Saved assistant response: {response}")
+
+            # Update state with response
+            state['next_question'] = response
+            self.save_state(state)
+
+            self._log("Successfully saved assistant response")
+            return True
+        except Exception as e:
+            self._log(f"Error saving assistant response: {e}", "error")
+            return False
+
+    def get_session_messages(self, limit: int = None) -> List[Dict[str, Any]]:
+        """Get all messages for the current session
+
+        Args:
+            limit: Optional limit on number of messages to return
+
+        Returns:
+            List of message dictionaries in chronological order
+        """
+        if not self._session:
+            self._log("No active session to get messages for", "warning")
+            return []
+
+        try:
+            # Get chat messages
+            messages = (
+                ChatMessage.select()
+                .where(ChatMessage.session == self._session)
+                .order_by(ChatMessage.timestamp.asc())
+            )
+
+            if limit:
+                messages = messages.limit(limit)
+
+            # Format messages
+            history = []
+            for message in messages:
+                history.append({
+                    'role': message.role,
+                    'content': message.content,
+                    'timestamp': message.timestamp.isoformat(),
+                    'session_id': self._session.id
+                })
+
+            self._log(f"Retrieved {len(history)} messages for session {self._session.id}")
+            return history
+        except Exception as e:
+            self._log(f"Error getting session messages: {e}", "error")
+            return []

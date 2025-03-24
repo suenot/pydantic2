@@ -87,16 +87,30 @@ def kill_port(port: int) -> bool:
         bool: True if process was killed, False otherwise
     """
     try:
-        for proc in psutil.process_iter(['pid', 'name', 'connections']):
+        # Use lsof to find process using the port
+        cmd = f"lsof -ti tcp:{port}"
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+
+        if output:
+            pid = int(output.decode().strip())
             try:
-                for conn in proc.net_connections():
-                    if conn.laddr.port == port:
-                        logger.info(f"Killing process {proc.pid} on port {port}")
-                        proc.kill()
-                        return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                pass
-        return False
+                proc = psutil.Process(pid)
+                proc.terminate()
+                proc.wait(timeout=3)
+                logger.info(f"Successfully killed process {pid} on port {port}")
+                return True
+            except psutil.NoSuchProcess:
+                logger.warning(f"Process {pid} on port {port} already terminated")
+                return True
+            except psutil.TimeoutExpired:
+                proc.kill()
+                logger.info(f"Force killed process {pid} on port {port}")
+                return True
+        else:
+            logger.warning(f"No process found on port {port}")
+            return False
+
     except Exception as e:
         logger.error(f"Error killing port {port}: {e}")
         return False

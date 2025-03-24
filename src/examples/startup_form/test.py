@@ -3,7 +3,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import time
-import concurrent.futures
 
 load_dotenv()
 
@@ -38,7 +37,8 @@ class StartupFormProcessor(BaseProgressForm):
             client_id="startup_form",
             form_class=StartupForm,
             form_prompt="""
-            Ask in Russian.
+            You are a naive startup founder who is asking for help to make a startup.
+            Talk like a stupid.
             """,
             verbose=verbose,
             verbose_clients=False,
@@ -93,57 +93,6 @@ class StartupFormProcessor(BaseProgressForm):
         except Exception as e:
             raise Exception(f"Error analyzing startup: {str(e)}")
 
-    def _process_with_test_agent(self, message: str) -> FormState:
-        """Internal method to process a form message using test agent"""
-        self._log("Processing message with test agent")
-
-        # Get response from test agent
-        response = self.get_test_agent_response()
-        self._log(f"Test agent response: {response}")
-
-        # Update form data based on the message
-        form_data = self.current_state.form.model_dump()
-
-        # Map messages to form fields with more specific conditions
-        if "food delivery app" in message.lower() or "startup idea" in message.lower():
-            form_data["idea_desc"] = message
-            self._log(f"Updated idea_desc: {message}")
-        elif "target market" in message.lower() or "urban professionals" in message.lower():
-            form_data["target_mkt"] = message
-            self._log(f"Updated target_mkt: {message}")
-        elif "revenue" in message.lower() or "commission" in message.lower() or "fee" in message.lower():
-            form_data["biz_model"] = message
-            self._log(f"Updated biz_model: {message}")
-        elif "team" in message.lower() or "developer" in message.lower() or "experienced" in message.lower():
-            form_data["team_info"] = message
-            self._log(f"Updated team_info: {message}")
-
-        # Create a new state with updated form data
-        new_state = FormState[self.form_class](
-            form=self.form_class(**form_data),
-            progress=self.current_state.progress,
-            prev_question=self.current_state.next_question,
-            prev_answer=message,
-            feedback="",
-            confidence=0.0,
-            next_question=response,
-            next_question_explanation=""
-        )
-
-        # Update progress based on form completion
-        filled_fields = sum(1 for value in form_data.values() if value)
-        total_fields = len(form_data)
-        new_state.progress = min(100, int((filled_fields / total_fields) * 100))
-
-        self._log(f"Updated progress: {new_state.progress}%")
-        self._log(f"Form data: {form_data}")
-
-        # Update current state and save
-        self.current_state = new_state
-        self.save_current_state()
-
-        return new_state
-
     def run_simple_dialog(self, messages: List[str]) -> str:
         """Run a simple dialog with automatic session creation
 
@@ -156,11 +105,6 @@ class StartupFormProcessor(BaseProgressForm):
             str: The session ID that was created
         """
         print("\n=== Simple Dialog Example (New Session) ===")
-
-        # Set initial question if needed
-        if not self.current_state.next_question:
-            self.current_state.next_question = "Tell me about your startup idea."
-            self.save_current_state()
 
         # Process each message
         for i, message in enumerate(messages):
@@ -209,13 +153,14 @@ class StartupFormProcessor(BaseProgressForm):
         self.db_manager.set_session(session_id)
 
         # Show current state
-        current_form = self.current_state.form.model_dump()
-        print("\nCurrent form data:")
-        for key, value in current_form.items():
-            if value:
-                print(f"  {key}: {value}")
+        state_data = self.db_manager.restore_session_state(self.form_class)
+        if state_data:
+            print("\nCurrent form data:")
+            for key, value in state_data['form'].model_dump().items():
+                if value:
+                    print(f"  {key}: {value}")
 
-        print(f"\nCurrent question: {self.current_state.next_question}")
+            print(f"\nCurrent question: {state_data['next_question']}")
 
         # Process each message
         for i, message in enumerate(messages):
@@ -223,7 +168,7 @@ class StartupFormProcessor(BaseProgressForm):
             print(f"A{i+1}: {message}")
 
             # Process the message
-            result = self.process_form(message, session_id=session_id)
+            result = self.process_form(message)
             print(f"Progress: {result.progress}%")
 
             # Show updated form data
@@ -249,7 +194,7 @@ class StartupFormProcessor(BaseProgressForm):
         print(f"Session ID: {self.db_manager.session_id}")
 
     def show_session_history(self, session_id: str = None) -> None:
-        """Show the history of states for a session
+        """Show the history of messages for a session
 
         Args:
             session_id: Optional session ID. If None, uses current session
@@ -258,27 +203,58 @@ class StartupFormProcessor(BaseProgressForm):
             self.db_manager.set_session(session_id)
 
         print(f"\n=== Session History (ID: {self.db_manager.session_id}) ===")
-        history = self.get_session_history()
+        messages = self.db_manager.get_session_messages()
 
-        if not history:
-            print("No history found for this session")
+        if not messages:
+            print("No messages found for this session")
             return
 
-        print(f"Total states: {len(history)}")
-        for i, state in enumerate(history, 1):
-            print(f"\nState {i}:")
-            print(f"  Progress: {state.get('state', {}).get('progress', 'None')}%")
-            print(f"  Question: {state.get('state', {}).get('prev_question', 'None')}")
-            print(f"  Answer: {state.get('state', {}).get('prev_answer', 'None')}")
-            print(f"  Timestamp: {state.get('timestamp', 'None')}")
+        print(f"Total messages: {len(messages)}")
+        for i, message in enumerate(messages, 1):
+            print(f"\nMessage {i}:")
+            print(f"  Role: {message['role']}")
+            print(f"  Content: {message['content']}")
+            print(f"  Timestamp: {message['timestamp']}")
 
-            # Show form data if available
-            form_data = state.get('state', {}).get('form', {})
-            if form_data:
-                print("  Form data:")
-                for key, value in form_data.items():
-                    if value:
-                        print(f"    {key}: {value}")
+        # Show current form state
+        state_data = self.db_manager.restore_session_state(self.form_class)
+        if state_data:
+            print("\nCurrent form state:")
+            print(f"  Progress: {state_data['progress']}%")
+            print(f"  Previous question: {state_data['prev_question']}")
+            print(f"  Previous answer: {state_data['prev_answer']}")
+            print(f"  Next question: {state_data['next_question']}")
+            print("\nForm data:")
+            for key, value in state_data['form'].model_dump().items():
+                print(f"  {key}: {value or '[empty yet]'}")
+
+    def process_form(self, message: str) -> FormState:
+        """Process a message and update form state"""
+        # Save user's message
+        self.db_manager.save_chat_message('user', message)
+
+        # Update form data based on the conversation
+        if "food delivery app" in message.lower():
+            self.current_state.form.idea_desc = message
+        elif "target market" in message.lower():
+            self.current_state.form.target_mkt = message
+        elif "revenue" in message.lower() or "commission" in message.lower():
+            self.current_state.form.biz_model = message
+        elif "team" in message.lower() or "developers" in message.lower():
+            self.current_state.form.team_info = message
+
+        # Calculate progress based on filled fields
+        filled_fields = sum(1 for field in self.current_state.form.model_dump().values() if field)
+        total_fields = len(self.current_state.form.model_dump())
+        self.current_state.progress = int((filled_fields / total_fields) * 100)
+
+        # Process with test agent
+        result = super().process_form(message)
+
+        # Save assistant's response
+        self.db_manager.save_chat_message('assistant', result.next_question)
+
+        return result
 
 
 def main(session_id: str = None):
