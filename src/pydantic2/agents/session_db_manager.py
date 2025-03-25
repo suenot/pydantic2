@@ -282,6 +282,7 @@ class SessionDBManager:
             history = []
             for message in messages:
                 history.append({
+                    'id': message.id,
                     'role': message.role,
                     'content': message.content,
                     'timestamp': message.timestamp.isoformat(),
@@ -571,6 +572,7 @@ class SessionDBManager:
             history = []
             for message in messages:
                 history.append({
+                    'id': message.id,
                     'role': message.role,
                     'content': message.content,
                     'timestamp': message.timestamp.isoformat(),

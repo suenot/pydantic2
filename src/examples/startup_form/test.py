@@ -233,21 +233,6 @@ class StartupFormProcessor(BaseProgressForm):
         # Save user's message
         self.db_manager.save_chat_message('user', message)
 
-        # Update form data based on the conversation
-        if "food delivery app" in message.lower():
-            self.current_state.form.idea_desc = message
-        elif "target market" in message.lower():
-            self.current_state.form.target_mkt = message
-        elif "revenue" in message.lower() or "commission" in message.lower():
-            self.current_state.form.biz_model = message
-        elif "team" in message.lower() or "developers" in message.lower():
-            self.current_state.form.team_info = message
-
-        # Calculate progress based on filled fields
-        filled_fields = sum(1 for field in self.current_state.form.model_dump().values() if field)
-        total_fields = len(self.current_state.form.model_dump())
-        self.current_state.progress = int((filled_fields / total_fields) * 100)
-
         # Process with test agent
         result = super().process_form(message)
 
@@ -281,19 +266,20 @@ def main(session_id: str = None):
         "Our main competitor is Uber Eats"
     ]
 
-    # Example 1: Run simple dialog (new session)
-    print("\n--- Example 1: New Session Dialog ---")
-    new_session_id = processor.run_simple_dialog(new_session_messages)
+    # # Example 1: Run simple dialog (new session)
+    # print("\n--- Example 1: New Session Dialog ---")
+    # new_session_id = processor.run_simple_dialog(new_session_messages)
 
     # Show history for new session
+    new_session_id = "307e77d3-6d51-4eac-8332-d1f4071b8752"
     processor.show_session_history(new_session_id)
 
-    # Example 2: Continue existing session
-    print("\n--- Example 2: Continue Existing Session ---")
-    processor.continue_session_dialog(new_session_id, continue_messages)
+    # # Example 2: Continue existing session
+    # print("\n--- Example 2: Continue Existing Session ---")
+    # processor.continue_session_dialog(new_session_id, continue_messages)
 
-    # Show updated history
-    processor.show_session_history(new_session_id)
+    # # Show updated history
+    # processor.show_session_history(new_session_id)
 
 
 if __name__ == "__main__":
